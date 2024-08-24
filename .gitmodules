@@ -1,0 +1,3 @@
+[submodule "kraken"]
+	path = ext/kraken
+	url = https://github.com/WolvenKit/kraken

@@ -1,0 +1,13 @@
+[package]
+name = "libinfinite"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bitflags = "2.6.0"
+byteorder = "1.5.0"
+num_enum = "0.7.3"
+walkdir = "2.5.0"
+
+[build-dependencies.cmake]
+version = "0.1"
