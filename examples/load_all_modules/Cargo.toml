@@ -5,7 +5,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-libinfinite = { path = "../.." }
+infinite-rs = { path = "../.." }
 walkdir = "2.5.0"
 
 [[bin]]

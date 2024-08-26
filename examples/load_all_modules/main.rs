@@ -1,4 +1,4 @@
-use libinfinite::ModuleFile;
+use infinite_rs::ModuleFile;
 
 fn main() -> std::io::Result<()> {
     let mut modules = Vec::new();

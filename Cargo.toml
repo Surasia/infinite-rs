@@ -1,7 +1,14 @@
 [package]
-name = "libinfinite"
+name = "infinite-rs"
 version = "0.1.0"
 edition = "2021"
+authors = ["Surasia"]
+license = "Unlicense OR MIT"
+repository = "https://github.com/Surasia/infinite-rs"
+documentation = "https://docs.rs/infinite-rs"
+description = "Simple and fast deserialization library for Halo Infinite."
+categories = ["encoding", "games", "parsing"]
+keywords = ["halo", "halo infinite", "game-hacking", "reverse-engineering"]
 
 [dependencies]
 bitflags = "2.6.0"

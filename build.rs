@@ -1,3 +1,5 @@
+//! Originally from: <https://github.com/rfuzzo/red4lib>
+
 use cmake::Config;
 use std::env;
 use std::path::Path;

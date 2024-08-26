@@ -55,7 +55,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "libinfinite"
+name = "infinite-rs"
 version = "0.1.0"
 dependencies = [
  "bitflags",
