@@ -50,7 +50,6 @@ impl JsonSourceFileTagDefinition {
         self.schema_file_data.read(reader)?;
         // Read one less byte: gets rid of null terminator, forming proper JSONC.
         self.data = reader.read_fixed_string(self.schema_file_data.size as usize - 1)?;
-        println!("{}", self.data);
         Ok(())
     }
 }

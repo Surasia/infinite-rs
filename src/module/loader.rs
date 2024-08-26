@@ -105,10 +105,13 @@ impl ModuleFile {
 #[cfg(test)]
 mod tests {
 
+    use std::env;
+
     use super::*;
 
     #[test]
     fn test_all_modules() -> std::io::Result<()> {
+        env::set_var("RUST_BACKTRACE", "1");
         let mut modules = Vec::new();
         let path = "C:/XboxGames/Halo Infinite/Content/deploy/";
 

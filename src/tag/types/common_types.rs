@@ -1,5 +1,5 @@
 use byteorder::{ReadBytesExt, LE};
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Read, Seek};
 
 use crate::common::extensions::BufReaderExt;
 
@@ -873,6 +873,7 @@ impl FieldReference {
         self.global_id = reader.read_i32::<LE>()?;
         self.asset_id = reader.read_u64::<LE>()?;
         self.group = reader.read_fixed_string(4)?;
+        self.local_handle = reader.read_i32::<LE>()?;
         Ok(())
     }
 }
@@ -917,13 +918,13 @@ impl FieldTagResource {
 /// "Internal struct" of AnyTag field.
 pub struct AnyTagGuts {
     pub tag_id: FieldLongInteger,
-    pub local_tag_handle: FieldPad,
+    pub local_tag_handle: FieldLongInteger,
 }
 
 impl AnyTagGuts {
     pub fn read<R: Read + Seek>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.tag_id.read(reader)?;
-        reader.seek(SeekFrom::Current(4))?; // 4 byte padding
+        self.local_tag_handle.read(reader)?;
         Ok(())
     }
 }
