@@ -9,7 +9,7 @@ This crate currently is in early-development. Please let me know via Github issu
 [![Crates.io](https://img.shields.io/crates/v/infinite-rs.svg)](https://crates.io/crates/infinite-rs)
 
 ### Documentation
-- Documentation on this project can be found at [docs.rs](https://docs.rs/infinite.rs).
+- Documentation on this project can be found at [docs.rs](https://docs.rs/infinite-rs).
 
 ### Usage/Example
 
