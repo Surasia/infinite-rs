@@ -1,0 +1,13 @@
+[package]
+publish = false
+name = "load_all_modules"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libinfinite = { path = "../.." }
+walkdir = "2.5.0"
+
+[[bin]]
+name = "load_all_modules"
+path = "main.rs"
