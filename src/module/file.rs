@@ -14,8 +14,11 @@ bitflags! {
     #[derive(Debug, Default)]
     /// Flags for the last 2 bytes of the data offset.
     pub struct DataOffsetType : u16  {
-        const USE_SELF = 0b00000000;
+        /// No additional HD1 module is required.
+        const USE_SELF = !0;
+        /// Additional HD1 module is required.
         const USE_HD1 = 0b00000001;
+        /// Unknown (HD2)?
         const USE_HD2 = 0b00000010;
     }
 }
@@ -23,38 +26,66 @@ bitflags! {
 #[derive(Default, Debug)]
 /// Module file entry structure containing metadata relating to file and required buffer sizes and offsets for the decompressor, as well as global tag ID, resource references and class.
 pub struct ModuleFileEntry {
+    /// Number of resources owned by the file.
     pub resource_count: u32,
+    /// Index of parent in module.
     pub parent_index: i32,
+    /// Unknown. (more flags? have to check in with gamergotten)
     pub unknown: u16,
+    /// Number of blocks that make up the file.
     pub block_count: u16,
+    /// Index of the first block in the module.
     pub block_index: u32,
+    /// Index of the first resource in the module's resource list.
     pub resource_index: u32,
-    pub class_id: String,
+    /// 4 byte-long string for tag group, stored as big endian. This determines how the rest of the tag is read.
+    /// Example:
+    /// * bitm: Bitmap
+    /// * mat: Material
+    pub tag_group: String,
+    /// Offset of compressed/uncompressed data in from the start of compressed data in the module.
     pub data_offset: u64,
+    /// Where the offset is located. 1 if in HD1.
     pub data_offset_flags: DataOffsetType,
+    /// Size in bytes of compressed buffer in module.
     pub total_compressed_size: u32,
+    /// Size in bytes of buffer to decompress into.
     pub total_uncompressed_size: u32,
-    pub global_tag_id: i32,
+    /// MurmurHash3_x86_64 32 bit hash of tag path.
+    /// Referred to in-memory as "global tag id"
+    /// Is set to -1 if file is resource.
+    pub tag_id: i32,
+    /// Size in bytes of header in decompressed buffer.
     pub uncompressed_header_size: u32,
+    /// Size in bytes of actual tag data in decompressed buffer.
     pub uncompressed_tag_data_size: u32,
+    /// Size in bytes of resource data in decompressed buffer.
     pub uncompressed_resource_data_size: u32,
+    /// Size in bytes of "external" resource data in decompressed buffer. (for instance, havok data or bitmaps)
     pub uncompressed_actual_resource_size: u32,
+    /// Number of blocks for owned resources.
     pub resource_block_count: u32,
+    /// Offset where the name of the file is located in the string table.
+    /// This is no longer valid as of module version 52.
     pub name_offset: u32,
+    /// Index to point back to the original file. -1 if file is not a resource.
     pub parent_resource: i32,
-    pub asset_checksum: u64,
-    pub asset_id: u64,
+    /// MurmurHash3_x86_64 128 bit hash of raw tag path (before cache compilation).
+    pub asset_checksum: u128,
+    /// Data stream containing a buffer of bytes to read/seek.
     pub data_stream: Cursor<Vec<u8>>,
-    pub metadata: TagFile,
-    pub is_loaded: bool,
+    /// The actual tag file read from the contents (including header), only valid if file is not a resource.
+    pub tag_info: TagFile,
+    /// Indicates if file is cached (non-lazy loaded) or not.
+    is_loaded: bool,
 }
 
 impl ModuleFileEntry {
+    /// Allocate new ModuleFileEntry and set it to default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
     /// Reads the metadata of a module file entry from the given reader.
-    ///
-    /// This function populates the fields of the `ModuleFileEntry` struct by reading
-    /// various data types from the provided `BufReader<File>`.
-    ///
     /// # Arguments
     ///
     /// * `reader` - A mutable reference to a `BufReader<File>` from which to read the data.
@@ -70,13 +101,13 @@ impl ModuleFileEntry {
         self.block_count = reader.read_u16::<LE>()?;
         self.block_index = reader.read_u32::<LE>()?;
         self.resource_index = reader.read_u32::<LE>()?;
-        self.class_id = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
-        self.data_offset = reader.read_u64::<LE>()? & 0x0000FFFFFFFFFFFF;
+        self.tag_group = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
+        self.data_offset = reader.read_u64::<LE>()? & 0x0000FFFFFFFFFFFF; // Mask last 6 bytes
         self.data_offset_flags =
-            DataOffsetType::from_bits_truncate((self.data_offset >> 48) as u16);
+            DataOffsetType::from_bits_truncate((self.data_offset >> 48) as u16); // Read first 2 bytes
         self.total_compressed_size = reader.read_u32::<LE>()?;
         self.total_uncompressed_size = reader.read_u32::<LE>()?;
-        self.global_tag_id = reader.read_i32::<LE>()?;
+        self.tag_id = reader.read_i32::<LE>()?;
         self.uncompressed_header_size = reader.read_u32::<LE>()?;
         self.uncompressed_tag_data_size = reader.read_u32::<LE>()?;
         self.uncompressed_resource_data_size = reader.read_u32::<LE>()?;
@@ -84,8 +115,7 @@ impl ModuleFileEntry {
         self.resource_block_count = reader.read_u32::<LE>()?;
         self.name_offset = reader.read_u32::<LE>()?;
         self.parent_resource = reader.read_i32::<LE>()?;
-        self.asset_checksum = reader.read_u64::<LE>()?;
-        self.asset_id = reader.read_u64::<LE>()?;
+        self.asset_checksum = reader.read_u128::<LE>()?;
         Ok(())
     }
 
@@ -120,11 +150,14 @@ impl ModuleFileEntry {
                 self.read_single_block(&mut reader, self, file_offset, &mut data)?;
             }
 
+            // .clone_from reuses resources, limiting unneeded allocations.
             let data_stream = std::io::Cursor::new(data);
             self.data_stream.clone_from(&data_stream);
 
             let mut buf_reader = BufReader::new(data_stream);
-            self.metadata.read(&mut buf_reader)?;
+            self.tag_info.read(&mut buf_reader)?;
+            self.tag_info
+                .read_struct(&self.tag_group, &mut buf_reader)?;
             self.is_loaded = true;
         }
         Ok(())

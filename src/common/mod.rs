@@ -1,3 +1,3 @@
-//! Common functions for BufReader.
+//! Common functions used throughout the project.
 
 pub mod extensions;

@@ -11,21 +11,30 @@ use std::{
 #[derive(Default, Debug)]
 /// Module structure which contains the layout of the entire module file. Also stores file_path for re-use in read_tag.
 pub struct ModuleFile {
+    /// Info relating to how the other fields should be read.
     pub header: ModuleHeader,
+    /// Metadata regarding compression and layout of files (tags)
     pub files: Vec<ModuleFileEntry>,
+    /// String slice of file names seperated by a null terminator.
+    /// Does not exist after module version 52.
     pub string_list: Vec<u8>,
+    /// Indices (?) of resource files present in module.
     pub resources: Vec<u32>,
+    /// Uncompressed/compressed blocks making up a file.
     pub blocks: Vec<ModuleBlockEntry>,
+    /// Offset in BufReader where file data starts.
     pub file_data_offset: u64,
-    pub block_list_offset: u64,
-    pub file_path: String,
+    /// Path stored to be re-used when reading tags.
+    file_path: String,
 }
 
 impl ModuleFile {
+    /// Allocate new ModuleFile and set it to default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
     /// Reads the module file from the given file path.
-    ///
     /// This function reads the entire structure of the module file.
-    ///
     /// It also calculates and stores important offsets within the file.
     ///
     /// # Arguments
@@ -45,7 +54,7 @@ impl ModuleFile {
 
         self.files = (0..self.header.file_count)
             .map(|_| {
-                let mut entry = ModuleFileEntry::default();
+                let mut entry = ModuleFileEntry::new();
                 entry.read(&mut reader).unwrap();
                 entry
             })
@@ -56,15 +65,14 @@ impl ModuleFile {
             reader.read_exact(&mut self.string_list)?;
         }
 
-        reader.seek_relative(8)?;
+        reader.seek_relative(8)?; // 8 Byte padding
         self.resources = (0..self.header.resource_count)
             .map(|_| reader.read_u32::<LE>().unwrap())
             .collect();
 
-        self.block_list_offset = reader.stream_position()?;
         self.blocks = (0..self.header.block_count)
             .map(|_| {
-                let mut block = ModuleBlockEntry::default();
+                let mut block = ModuleBlockEntry::new();
                 block.read(&mut reader).unwrap();
                 block
             })
@@ -96,6 +104,7 @@ impl ModuleFile {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
 
     #[test]
@@ -127,9 +136,9 @@ mod tests {
 
         for module in &mut modules {
             for index in 0..module.files.len() {
-                if module.files[index].global_tag_id != -1 {
+                if module.files[index].tag_id != -1 {
                     module.read_tag(index)?;
-                    println!("{:#?}", module.files[index]);
+                    //println!("{:#?}", module.files[index].tag_info);
                 }
             }
         }

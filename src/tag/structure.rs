@@ -1,4 +1,4 @@
-//! Hierarchical structure of tag.
+//! Hierarchical structure entry of tag.
 
 use byteorder::{ReadBytesExt, LE};
 use num_enum::TryFromPrimitive;
@@ -9,29 +9,44 @@ use std::io::Read;
 /// Enum defining what the tag struct is pointing to.
 pub enum TagStructType {
     #[default]
+    /// "Root" of structure.
     MainStruct,
+    /// An array of items in structure.
     TagBlock,
+    /// Reference to child resource.
     Resource,
+    /// Reference to "external" resource.
     Custom,
+    /// Unknown
     Literal,
 }
 
 #[derive(Default, Debug)]
 /// Structure defining the hierarchical order of info in tags.
 pub struct TagStruct {
+    /// GUID of the structure referenced.
     pub guid: u128,
+    /// Where the structure is located.
     pub struct_type: TagStructType,
+    /// Unknown (but important)
     pub unknown: u16,
+    /// For main struct and tag block structs, the index of the block containing the struct.
+    /// For resource structs, index of the resource.
+    /// Can be -1 if the tag field doesn't point to anything.
     pub target_index: i32,
+    /// The index of the data block containing the tag field which refers to this struct.
+    /// Can be -1 for the main struct.
     pub field_block: u32,
+    /// The offset of the tag field inside the data block.
     pub field_offset: u32,
 }
 
 impl TagStruct {
+    /// Allocate new TagStruct and set it to default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
     /// Reads the tag structure from a given buffer reader.
-    ///
-    /// This function populates the `TagStruct` fields by reading data from the provided buffer reader.
-    ///
     /// # Arguments
     ///
     /// * `reader` - A mutable reference to a `BufReader<&[u8]>` from which to read the data

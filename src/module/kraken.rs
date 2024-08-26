@@ -21,7 +21,7 @@ extern "C" {
 ///
 /// # Returns
 ///
-/// An `i32` representing the result of the decompression operation.
+/// Offset of compressed_buffer after the compressed data has been read, or -1 if decompression has failed.
 pub fn decompress(compressed_buffer: Vec<u8>, output_buffer: &mut Vec<u8>, size: usize) -> i32 {
     let mut buffer = vec![0; size * 2];
     let result;
@@ -37,6 +37,5 @@ pub fn decompress(compressed_buffer: Vec<u8>, output_buffer: &mut Vec<u8>, size:
         buffer.resize(result as usize, 0);
         *output_buffer = buffer;
     }
-
     result
 }

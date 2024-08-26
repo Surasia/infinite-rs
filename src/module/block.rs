@@ -6,21 +6,28 @@ use std::{fs::File, io::BufReader};
 #[derive(Default, Debug)]
 /// Module block containing info relating to Kraken compression.
 /// Is used to determine how to read bytes in module_file.
-/// Caution: Max size is 2GBs, Kraken limitation!
+///
+/// Caution: Max size is 2GBs, engine limitation.
 pub struct ModuleBlockEntry {
+    /// Offset of compressed data inside module (after file_data_offset in module).
     pub compressed_offset: i32,
+    /// Size in bytes of compressed data inside module.
     pub compressed_size: i32,
+    /// Offset of decompressed data inside decompression buffer.
     pub decompressed_offset: i32,
+    /// Size in bytes of decompression buffer.
     pub decompressed_size: i32,
+    /// Boolean indicating if block is compressed or not.
+    /// Tags can be made up of both compressed and decompressed blocks.
     pub is_compressed: bool,
 }
 
 impl ModuleBlockEntry {
+    /// Allocate new ModuleBlockEntry and set it to default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
     /// Reads the module block entry data from the provided buffered reader.
-    ///
-    /// This method populates the fields of the `ModuleBlockEntry` struct by reading
-    /// values from the given `BufReader<File>`.
-    ///
     /// # Arguments
     ///
     /// * `reader` - A mutable reference to a `BufReader<File>` from which to read the data.

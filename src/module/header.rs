@@ -19,13 +19,13 @@ pub struct ModuleHeader {
     pub version: i32,
     /// Unique identifier. (not a hash?)
     pub module_id: i64,
-    /// Amount of tags in module.
+    /// Amount of files in module.
     pub file_count: u32,
-    /// Not in all modules.
+    /// Unknown: not in all modules.
     pub manifest0_count: u32,
-    /// Present in most modules.
+    /// Unknown: present in most modules.
     pub manifest1_count: u32,
-    /// Not present in any modules.
+    /// Unknown: not present in any modules.
     pub manifest2_count: u32,
     /// Index of the first resource entry (file_count - resource_count)
     pub resource_index: i32,
@@ -39,16 +39,18 @@ pub struct ModuleHeader {
     pub build_version: u64,
     /// If non-zero, requires hd1 file.
     pub hd1_delta: u64,
-    /// Total size of compressed data in module.
+    /// Total size of packed data in module.
+    /// Both compressed and uncompressed
+    /// Starts after files, blocks, resources have been read.
     pub data_size: u64,
 }
 
 impl ModuleHeader {
+    /// Allocate new ModuleHeader and set it to default values.
+    pub fn new() -> Self {
+        Self::default()
+    }
     /// Reads the module header from the given buffered reader.
-    ///
-    /// This function populates the fields of the `ModuleHeader` struct by reading
-    /// various data types from the provided `BufReader<File>`.
-    ///
     /// # Arguments
     ///
     /// * `reader` - A mutable reference to a `BufReader<File>` from which to read the data.
@@ -67,16 +69,20 @@ impl ModuleHeader {
     pub fn read(&mut self, reader: &mut BufReader<File>) -> std::io::Result<()> {
         self.magic = reader.read_fixed_string(4)?;
         if self.magic != "mohd" {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid magic!"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Invalid magic: {}", self.magic),
+            ));
         }
 
         self.version = reader.read_i32::<LE>()?;
         if self.version <= 0x34 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "Invalid module version!",
+                format!("Invalid module version: {}", self.version),
             ));
         }
+
         self.module_id = reader.read_i64::<LE>()?;
         self.file_count = reader.read_u32::<LE>()?;
         self.manifest0_count = reader.read_u32::<LE>()?;

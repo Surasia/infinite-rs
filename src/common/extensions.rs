@@ -1,4 +1,11 @@
 //! Extensions to BufReader.
+//!
+//! Implements `read_cstring` and `read_fixed_string` that are not present in the regular BufReader.
+//! * `read_cstring:` Given a buffer, reads a character until `0x00` is encountered (null termination), returns the `String` collected. Errors when given invalid UTF-8.
+//! * `read_fixed_string:` Given a buffer and size, reads characters and collects them into a `String` abd returns it. Ignores unknown UTF-8 encoding, errors out when encountering end-of-file or other IO related errors.
+//!
+//! These functions are implemented as traits in generics. Requires `<BufReaderExt + Read>` to be satisfied.
+//!
 
 use std::io::{self, BufRead, BufReader, Read};
 
@@ -19,7 +26,7 @@ pub trait BufReaderExt: BufRead {
         let mut buffer = Vec::new();
         self.read_until(0, &mut buffer)?;
         if buffer.ends_with(&[0]) {
-            buffer.pop();
+            buffer.pop(); // remove null terminator from buffer
         }
         String::from_utf8(buffer).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
     }
