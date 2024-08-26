@@ -1,4 +1,6 @@
 //! Kraken decompressor wrapper.
+//!
+//! Originally from: <https://github.com/rfuzzo/red4lib>
 
 #[link(name = "kraken_static")]
 extern "C" {

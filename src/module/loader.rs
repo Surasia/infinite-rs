@@ -97,53 +97,9 @@ impl ModuleFile {
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
     pub fn read_tag(&mut self, index: usize) -> std::io::Result<()> {
-        self.files[index].read_tag(&self.file_path, self.file_data_offset, &self.blocks)?;
-        Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-
-    use std::env;
-
-    use super::*;
-
-    #[test]
-    fn test_all_modules() -> std::io::Result<()> {
-        env::set_var("RUST_BACKTRACE", "1");
-        let mut modules = Vec::new();
-        let path = "C:/XboxGames/Halo Infinite/Content/deploy/";
-
-        for entry in walkdir::WalkDir::new(path)
-            .into_iter()
-            .filter_map(|e| e.ok())
-        {
-            if entry.file_type().is_file() {
-                let file_path = entry.path().to_str().unwrap();
-                if file_path.ends_with(".module") {
-                    let mut module = ModuleFile::default();
-                    match module.read(String::from(file_path)) {
-                        Ok(_) => {
-                            modules.push(module);
-                            println!("Read module: {}", file_path);
-                        }
-                        Err(err) => {
-                            println!("Failed on file: {}", file_path);
-                            return Err(err);
-                        }
-                    };
-                }
-            }
-        }
-
-        for module in &mut modules {
-            for index in 0..module.files.len() {
-                if module.files[index].tag_id != -1 {
-                    module.read_tag(index)?;
-                    //println!("{:#?}", module.files[index].tag_info);
-                }
-            }
+        // -1 indicates a resource tag.
+        if self.files[index].tag_id != -1 {
+            self.files[index].read_tag(&self.file_path, self.file_data_offset, &self.blocks)?;
         }
         Ok(())
     }

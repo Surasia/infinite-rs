@@ -9,7 +9,7 @@ This crate currently is in early-development. Please let me know via Github issu
 ```rust
 use libinfinite::ModuleFile
 
-fn load_modules() {
+fn load_modules() -> std::io::Result<()> {
     // Create new instance of a Module file.
     // These are the main archive files used in Halo Infinite.
     let mut module = ModuleFile::new();
@@ -18,9 +18,24 @@ fn load_modules() {
 
     // The tag file is made up of a header and other structures.
     // This is an "asset" stored in the module.
-    println!("{:#?}", module.files[0].tag_file);
+    // Reads file at index 0 of the module.
+    println!("{:#?}", module.files[0]);
+    """
+    ModuleFileEntry {
+        resource_count: 0,
+        parent_index: 7,
+        unknown: 788,
+        block_count: 2,
+        block_index: 7,
+        resource_index: 0,
+        tag_group: "LigS",
+        ...
+    """
 
 
+    // Read tag at index 0 into "tag info".
+    module.read_tag(0)
+    println!("{:#?}", module.files[0].tag_info);
     """
     TagFile {
         header: TagHeader {
@@ -30,6 +45,8 @@ fn load_modules() {
             checksum: 7960564650044378456,
             ...
     """
+
+    Ok(())
 }
 ```
 */
