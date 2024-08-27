@@ -7,12 +7,14 @@ use super::{
     header::TagHeader,
     reference::TagReference,
     structure::TagStruct,
-    types::structs::{cmsw::CoatingSwatchPODTag, jssc::JsonSourceFileTagDefinition},
+    types::structs::{
+        cmsw::CoatingSwatchPODTag, jssc::JsonSourceFileTagDefinition, luas::LuaScriptTagDefinition,
+    },
     zoneset::{header::TagZonesetHeader, instance::TagZoneset},
 };
 use crate::common::extensions::BufReaderExt;
 use std::any::Any;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{BufRead, Seek, SeekFrom};
 
 #[derive(Default, Debug)]
 /// Tag structure containing structure of entire tag file.
@@ -52,7 +54,7 @@ impl TagFile {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: Read + BufReaderExt + Seek>(
+    pub fn read<R: BufRead + BufReaderExt + Seek>(
         &mut self,
         mut reader: &mut R,
     ) -> std::io::Result<()> {
@@ -124,7 +126,7 @@ impl TagFile {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read_struct<R: Read + BufReaderExt + Seek>(
+    pub fn read_struct<R: BufRead + BufReaderExt + Seek>(
         &mut self,
         tag_group: &str,
         reader: &mut R,
@@ -139,6 +141,11 @@ impl TagFile {
                 let mut cmsw = CoatingSwatchPODTag::new();
                 cmsw.read(reader)?;
                 self.structure = Some(Box::new(cmsw));
+            }
+            "luas" => {
+                let mut luas = LuaScriptTagDefinition::new();
+                luas.read(reader)?;
+                self.structure = Some(Box::new(luas));
             }
             _ => (),
         }

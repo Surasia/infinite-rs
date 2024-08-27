@@ -1,7 +1,7 @@
 //! Zoneset tag containing its name and reference ID.
 
 use byteorder::{ReadBytesExt, LE};
-use std::io::Read;
+use std::io::BufRead;
 
 #[derive(Default, Debug)]
 pub struct TagZonesetTag {
@@ -25,7 +25,7 @@ impl TagZonesetTag {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.global_id = reader.read_i32::<LE>()?;
         self.string_id = reader.read_i32::<LE>()?;
         Ok(())

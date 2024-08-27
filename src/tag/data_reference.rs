@@ -1,6 +1,6 @@
 //! Reference to binary blob inside tag that isn't defined by a structure.
 
-use std::io::Read;
+use std::io::BufRead;
 
 use byteorder::{ReadBytesExt, LE};
 
@@ -34,7 +34,7 @@ impl TagDataReference {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.parent_struct_index = reader.read_i32::<LE>()?;
         self.unknown = reader.read_i32::<LE>()?;
         self.target_index = reader.read_i32::<LE>()?;

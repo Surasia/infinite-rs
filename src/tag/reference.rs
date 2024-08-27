@@ -1,6 +1,6 @@
 //! Reference to external tag that will get loaded on access.
 
-use std::io::Read;
+use std::io::BufRead;
 
 use byteorder::{ReadBytesExt, LE};
 
@@ -33,7 +33,7 @@ impl TagReference {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.field_block = reader.read_u32::<LE>()?;
         self.field_offset = reader.read_u32::<LE>()?;
         self.name_offset = reader.read_u32::<LE>()?;

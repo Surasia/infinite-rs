@@ -1,7 +1,7 @@
 //! Instance of a zoneset tag that comes after the tag header.
 
 use byteorder::{ReadBytesExt, LE};
-use std::io::Read;
+use std::io::BufRead;
 
 #[derive(Default, Debug)]
 /// An instance of a zoneset dictating how many tags to read.
@@ -30,7 +30,7 @@ impl TagZonesetInstanceHeader {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.string_id = reader.read_i32::<LE>()?;
         self.tag_count = reader.read_u32::<LE>()?;
         self.parent_count = reader.read_u32::<LE>()?;

@@ -2,7 +2,7 @@
 
 use byteorder::{ReadBytesExt, LE};
 use num_enum::TryFromPrimitive;
-use std::io::Read;
+use std::io::BufRead;
 
 #[derive(Default, Debug, TryFromPrimitive)]
 #[repr(u16)]
@@ -54,7 +54,7 @@ impl TagStruct {
     /// # Returns
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `std::io::Error` if any read fails.
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.guid = reader.read_u128::<LE>()?;
         self.struct_type = TagStructType::try_from(reader.read_u16::<LE>()?).unwrap();
         self.unknown = reader.read_u16::<LE>()?;

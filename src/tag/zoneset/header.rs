@@ -1,7 +1,7 @@
 //! Zoneset header containing info on the entirety of the zoneset structure.
 
 use byteorder::{ReadBytesExt, LE};
-use std::io::Read;
+use std::io::BufRead;
 
 #[derive(Default, Debug)]
 /// Zoneset header used to read tags.
@@ -30,7 +30,7 @@ impl TagZonesetHeader {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.string_id = reader.read_i32::<LE>()?;
         self.zoneset_count = reader.read_u32::<LE>()?;
         self.footer_count = reader.read_u32::<LE>()?;

@@ -6,7 +6,7 @@ use bitflags::bitflags;
 use byteorder::{ReadBytesExt, LE};
 use std::{
     fs::File,
-    io::{BufReader, Cursor, Read, Seek, SeekFrom},
+    io::{BufRead, BufReader, Cursor, Read, Seek, SeekFrom},
     path::Path,
 };
 
@@ -94,7 +94,7 @@ impl ModuleFileEntry {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read(&mut self, reader: &mut BufReader<File>) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.resource_count = reader.read_u32::<LE>()?;
         self.parent_index = reader.read_i32::<LE>()?;
         self.unknown = reader.read_u16::<LE>()?;

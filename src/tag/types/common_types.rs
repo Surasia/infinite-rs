@@ -1,5 +1,5 @@
 use byteorder::{ReadBytesExt, LE};
-use std::io::{Read, Seek};
+use std::io::{BufRead, Seek};
 
 use crate::common::extensions::BufReaderExt;
 
@@ -10,7 +10,7 @@ pub struct FieldString {
 }
 
 impl FieldString {
-    pub fn read<R: Read + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.string = reader.read_fixed_string(32)?;
         Ok(())
     }
@@ -23,7 +23,7 @@ pub struct FieldLongString {
 }
 
 impl FieldLongString {
-    pub fn read<R: Read + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.long_string = reader.read_fixed_string(256)?;
         Ok(())
     }
@@ -36,7 +36,7 @@ pub struct FieldStringId {
 }
 
 impl FieldStringId {
-    pub fn read<R: Read + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.string_id = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -49,7 +49,7 @@ pub struct FieldUnused1 {
 }
 
 impl FieldUnused1 {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         reader.read_exact(&mut self.unused)?;
         Ok(())
     }
@@ -62,7 +62,7 @@ pub struct FieldCharInteger {
 }
 
 impl FieldCharInteger {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.char_integer = reader.read_i8()?;
         Ok(())
     }
@@ -75,7 +75,7 @@ pub struct FieldShortInteger {
 }
 
 impl FieldShortInteger {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.short_integer = reader.read_i16::<LE>()?;
         Ok(())
     }
@@ -88,7 +88,7 @@ pub struct FieldLongInteger {
 }
 
 impl FieldLongInteger {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.long_integer = reader.read_i32::<LE>()?;
         Ok(())
     }
@@ -101,7 +101,7 @@ pub struct FieldInt64Integer {
 }
 
 impl FieldInt64Integer {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.int64_integer = reader.read_i64::<LE>()?;
         Ok(())
     }
@@ -114,7 +114,7 @@ pub struct FieldAngle {
 }
 
 impl FieldAngle {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.angle = reader.read_f32::<LE>()?;
         Ok(())
     }
@@ -127,7 +127,7 @@ pub struct FieldTag {
 }
 
 impl FieldTag {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.tag = reader.read_i32::<LE>()?;
         Ok(())
     }
@@ -140,7 +140,7 @@ pub struct FieldCharEnum {
 }
 
 impl FieldCharEnum {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.char_enum = reader.read_u8()?;
         Ok(())
     }
@@ -153,7 +153,7 @@ pub struct FieldShortEnum {
 }
 
 impl FieldShortEnum {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.short_enum = reader.read_u16::<LE>()?;
         Ok(())
     }
@@ -166,7 +166,7 @@ pub struct FieldLongEnum {
 }
 
 impl FieldLongEnum {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.long_enum = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -179,7 +179,7 @@ pub struct FieldLongFlags {
 }
 
 impl FieldLongFlags {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.long_flags = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -192,7 +192,7 @@ pub struct FieldWordFlags {
 }
 
 impl FieldWordFlags {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.word_flags = reader.read_u16::<LE>()?;
         Ok(())
     }
@@ -205,7 +205,7 @@ pub struct FieldByteFlags {
 }
 
 impl FieldByteFlags {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.byte_flags = reader.read_u8()?;
         Ok(())
     }
@@ -219,7 +219,7 @@ pub struct FieldPoint2D {
 }
 
 impl FieldPoint2D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_u16::<LE>()?;
         self.y = reader.read_u16::<LE>()?;
         Ok(())
@@ -234,7 +234,7 @@ pub struct FieldRectangle2D {
 }
 
 impl FieldRectangle2D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_u16::<LE>()?;
         self.y = reader.read_u16::<LE>()?;
         Ok(())
@@ -252,7 +252,7 @@ pub struct FieldRGBColor {
 }
 
 impl FieldRGBColor {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.r = reader.read_u8()?;
         self.g = reader.read_u8()?;
         self.b = reader.read_u8()?;
@@ -271,7 +271,7 @@ pub struct FieldARGBColor {
 }
 
 impl FieldARGBColor {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.r = reader.read_u8()?;
         self.g = reader.read_u8()?;
         self.b = reader.read_u8()?;
@@ -287,7 +287,7 @@ pub struct FieldReal {
 }
 
 impl FieldReal {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.real = reader.read_f32::<LE>()?;
         Ok(())
     }
@@ -300,7 +300,7 @@ pub struct FieldRealFraction {
 }
 
 impl FieldRealFraction {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.fraction = reader.read_f32::<LE>()?;
         Ok(())
     }
@@ -314,7 +314,7 @@ pub struct FieldRealPoint2D {
 }
 
 impl FieldRealPoint2D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         Ok(())
@@ -330,7 +330,7 @@ pub struct FieldRealPoint3D {
 }
 
 impl FieldRealPoint3D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         self.z = reader.read_f32::<LE>()?;
@@ -346,7 +346,7 @@ pub struct FieldRealVector2D {
 }
 
 impl FieldRealVector2D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         Ok(())
@@ -362,7 +362,7 @@ pub struct FieldRealVector3D {
 }
 
 impl FieldRealVector3D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         self.z = reader.read_f32::<LE>()?;
@@ -381,7 +381,7 @@ pub struct FieldRealQuaternion {
 }
 
 impl FieldRealQuaternion {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         self.z = reader.read_f32::<LE>()?;
@@ -398,7 +398,7 @@ pub struct FieldRealEulerAngles2D {
 }
 
 impl FieldRealEulerAngles2D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         Ok(())
@@ -414,7 +414,7 @@ pub struct FieldRealEularAngles3D {
 }
 
 impl FieldRealEularAngles3D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         self.z = reader.read_f32::<LE>()?;
@@ -431,7 +431,7 @@ pub struct FieldRealPlane2D {
 }
 
 impl FieldRealPlane2D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         self.d = reader.read_f32::<LE>()?;
@@ -449,7 +449,7 @@ pub struct FieldRealPlane3D {
 }
 
 impl FieldRealPlane3D {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.x = reader.read_f32::<LE>()?;
         self.y = reader.read_f32::<LE>()?;
         self.z = reader.read_f32::<LE>()?;
@@ -467,7 +467,7 @@ pub struct FieldRealRGBColor {
 }
 
 impl FieldRealRGBColor {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.r = reader.read_f32::<LE>()?;
         self.g = reader.read_f32::<LE>()?;
         self.b = reader.read_f32::<LE>()?;
@@ -485,7 +485,7 @@ pub struct FieldRealARGBColor {
 }
 
 impl FieldRealARGBColor {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.a = reader.read_f32::<LE>()?;
         self.r = reader.read_f32::<LE>()?;
         self.g = reader.read_f32::<LE>()?;
@@ -502,7 +502,7 @@ pub struct FieldRealHSVColor {
 }
 
 impl FieldRealHSVColor {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.hsv = reader.read_f32::<LE>()?;
         Ok(())
     }
@@ -516,7 +516,7 @@ pub struct FieldRealAHSVColor {
 }
 
 impl FieldRealAHSVColor {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.ahsv = reader.read_f32::<LE>()?;
         Ok(())
     }
@@ -530,7 +530,7 @@ pub struct FieldShortBounds {
 }
 
 impl FieldShortBounds {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.min = reader.read_u16::<LE>()?;
         self.max = reader.read_u16::<LE>()?;
         Ok(())
@@ -545,7 +545,7 @@ pub struct FieldAngleBounds {
 }
 
 impl FieldAngleBounds {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.min = reader.read_f32::<LE>()?;
         self.max = reader.read_f32::<LE>()?;
         Ok(())
@@ -560,7 +560,7 @@ pub struct FieldRealBounds {
 }
 
 impl FieldRealBounds {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.min = reader.read_f32::<LE>()?;
         self.max = reader.read_f32::<LE>()?;
         Ok(())
@@ -575,7 +575,7 @@ pub struct FieldRealFractionBounds {
 }
 
 impl FieldRealFractionBounds {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.min = reader.read_f32::<LE>()?;
         self.max = reader.read_f32::<LE>()?;
         Ok(())
@@ -589,7 +589,7 @@ pub struct FieldUnused2 {
 }
 
 impl FieldUnused2 {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.unused = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -602,7 +602,7 @@ pub struct FieldUnused3 {
 }
 
 impl FieldUnused3 {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.unused = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -615,7 +615,7 @@ pub struct FieldLongBlockFlags {
 }
 
 impl FieldLongBlockFlags {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.flags = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -628,7 +628,7 @@ pub struct FieldWordBlockFlags {
 }
 
 impl FieldWordBlockFlags {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.flags = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -641,7 +641,7 @@ pub struct FieldByteBlockFlags {
 }
 
 impl FieldByteBlockFlags {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.flags = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -654,7 +654,7 @@ pub struct FieldCharBlockIndex {
 }
 
 impl FieldCharBlockIndex {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.index = reader.read_u8()?;
         Ok(())
     }
@@ -667,7 +667,7 @@ pub struct FieldCustomCharBlockIndex {
 }
 
 impl FieldCustomCharBlockIndex {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.index = reader.read_u8()?;
         Ok(())
     }
@@ -680,7 +680,7 @@ pub struct FieldShortBlockIndex {
 }
 
 impl FieldShortBlockIndex {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.index = reader.read_u16::<LE>()?;
         Ok(())
     }
@@ -693,7 +693,7 @@ pub struct FieldCustomShortBlockIndex {
 }
 
 impl FieldCustomShortBlockIndex {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.index = reader.read_u16::<LE>()?;
         Ok(())
     }
@@ -706,7 +706,7 @@ pub struct FieldLongBlockIndex {
 }
 
 impl FieldLongBlockIndex {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.index = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -719,7 +719,7 @@ pub struct FieldCustomLongBlockIndex {
 }
 
 impl FieldCustomLongBlockIndex {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.index = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -732,7 +732,7 @@ pub struct FieldUnused4 {
 }
 
 impl FieldUnused4 {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.unused = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -745,7 +745,7 @@ pub struct FieldUnused5 {
 }
 
 impl FieldUnused5 {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.unused = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -782,7 +782,7 @@ pub struct FieldUnused6 {
 }
 
 impl FieldUnused6 {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.unused = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -799,7 +799,7 @@ pub struct FieldByteInteger {
 }
 
 impl FieldByteInteger {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.byte_integer = reader.read_u8()?;
         Ok(())
     }
@@ -812,7 +812,7 @@ pub struct FieldWordInteger {
 }
 
 impl FieldWordInteger {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.word_integer = reader.read_u16::<LE>()?;
         Ok(())
     }
@@ -825,7 +825,7 @@ pub struct FieldDwordInteger {
 }
 
 impl FieldDwordInteger {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.dword_integer = reader.read_u32::<LE>()?;
         Ok(())
     }
@@ -838,21 +838,25 @@ pub struct FieldQwordInteger {
 }
 
 impl FieldQwordInteger {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.qword_integer = reader.read_u64::<LE>()?;
         Ok(())
     }
 }
 
 #[derive(Default, Debug)]
-/// _40: Block field, stores a fixed-size array of 20 bytes.
+/// _40: Tag block, stores the size of an array.
 pub struct FieldBlock {
-    pub block: [u8; 20],
+    pub type_info: u64, // uintptr at runtime
+    pub unknown: u64,   // uintptr at runtime
+    pub size: u32,
 }
 
 impl FieldBlock {
-    pub fn read<R: Read>(&mut self, reader: &mut R) -> std::io::Result<()> {
-        reader.read_exact(&mut self.block)?;
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
+        self.type_info = reader.read_u64::<LE>()?;
+        self.unknown = reader.read_u64::<LE>()?;
+        self.size = reader.read_u32::<LE>()?;
         Ok(())
     }
 }
@@ -868,11 +872,11 @@ pub struct FieldReference {
 }
 
 impl FieldReference {
-    pub fn read<R: Read + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.type_info = reader.read_u64::<LE>()?;
         self.global_id = reader.read_i32::<LE>()?;
         self.asset_id = reader.read_u64::<LE>()?;
-        self.group = reader.read_fixed_string(4)?;
+        self.group = reader.read_fixed_string(4)?.chars().rev().collect(); // reverse string
         self.local_handle = reader.read_i32::<LE>()?;
         Ok(())
     }
@@ -883,12 +887,12 @@ impl FieldReference {
 pub struct FieldData {
     pub data: u64,      // uintptr at runtime
     pub type_info: u64, // uintptr at runtime
-    pub unknown: u32,
+    pub unknown: u32,   // always 0?
     pub size: u32,
 }
 
 impl FieldData {
-    pub fn read<R: Read + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.data = reader.read_u64::<LE>()?;
         self.type_info = reader.read_u64::<LE>()?;
         self.unknown = reader.read_u32::<LE>()?;
@@ -906,7 +910,7 @@ pub struct FieldTagResource {
 }
 
 impl FieldTagResource {
-    pub fn read<R: Read + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.block = reader.read_u64::<LE>()?;
         self.handle = reader.read_u32::<LE>()?;
         self.unknown = reader.read_u32::<LE>()?;
@@ -922,7 +926,7 @@ pub struct AnyTagGuts {
 }
 
 impl AnyTagGuts {
-    pub fn read<R: Read + Seek>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + Seek>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.tag_id.read(reader)?;
         self.local_tag_handle.read(reader)?;
         Ok(())
@@ -938,7 +942,7 @@ pub struct AnyTag {
 }
 
 impl AnyTag {
-    pub fn read<R: Read + Seek>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + Seek>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.vtable_space.read(reader)?;
         self.internal_struct.read(reader)?;
         Ok(())

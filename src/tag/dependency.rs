@@ -2,7 +2,7 @@
 
 use crate::common::extensions::BufReaderExt;
 use byteorder::{ReadBytesExt, LE};
-use std::io::Read;
+use std::io::BufRead;
 
 #[derive(Default, Debug)]
 /// Dependency structure that can be used to search and lazy load for tags inside modules.
@@ -39,7 +39,7 @@ impl TagDependency {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: Read + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.tag_group = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
         self.name_offset = reader.read_u32::<LE>()?;
         self.asset_id = reader.read_u64::<LE>()?;

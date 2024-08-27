@@ -6,7 +6,7 @@ use crate::{
     common::extensions::BufReaderExt,
     tag::types::common_types::{AnyTag, FieldData, FieldLongString, FieldReference, FieldStringId},
 };
-use std::io::{Read, Seek};
+use std::io::{BufRead, Seek};
 
 #[derive(Default, Debug)]
 /// This type (jssc) contains some metadata regarding the file stored in it and the contents of it, which is a JSONC (JSON with comments) file.
@@ -42,7 +42,10 @@ impl JsonSourceFileTagDefinition {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read<R: Read + BufReaderExt + Seek>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt + Seek>(
+        &mut self,
+        reader: &mut R,
+    ) -> std::io::Result<()> {
         self.any_tag.read(reader)?;
         self.schema_file_reference.read(reader)?;
         self.schema_file_name.read(reader)?;

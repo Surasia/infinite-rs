@@ -2,7 +2,7 @@
 
 use crate::common::extensions::BufReaderExt;
 use byteorder::{ReadBytesExt, LE};
-use std::io::Read;
+use std::io::BufRead;
 
 #[derive(Default, Debug)]
 /// Tag Header structure containing info on the layout of the tag file.
@@ -72,7 +72,7 @@ impl TagHeader {
     /// * The magic string is not "ucsh"
     /// * The version is less than or equal to 17
     /// * Any I/O error occurs while reading
-    pub fn read<R: Read + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.magic = reader.read_fixed_string(4)?;
         if self.magic != "ucsh" {
             return Err(std::io::Error::new(

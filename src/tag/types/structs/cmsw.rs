@@ -8,7 +8,7 @@ use crate::{
         AnyTag, FieldReal, FieldRealRGBColor, FieldRealVector2D, FieldReference,
     },
 };
-use std::io::{Read, Seek};
+use std::io::{BufRead, Seek};
 
 #[derive(Default, Debug)]
 /// This type (cmsw) defines a "coating swatch" which is a collection of parameters making up a procedural material for coatings.
@@ -85,7 +85,10 @@ impl CoatingSwatchPODTag {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read<R: Read + Seek + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + Seek + BufReaderExt>(
+        &mut self,
+        reader: &mut R,
+    ) -> std::io::Result<()> {
         self.any_tag.read(reader)?;
         self.parent.read(reader)?;
         self.color_and_roughness_texture_transform.read(reader)?;
