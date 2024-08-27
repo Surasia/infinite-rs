@@ -103,4 +103,23 @@ impl ModuleFile {
         }
         Ok(())
     }
+
+    /// Searches for the index of the tag given the global_id.
+    /// Reads the tag using read_tag and stores it in the index.
+    ///
+    /// # Arguments
+    ///
+    /// * `global_id` - The global tag ID of the file to find.
+    ///
+    /// # Returns
+    ///
+    /// Returns the index of the file if successful, 0 if it fails. Any I/O Error is also returned if it occurs.
+    pub fn read_tag_from_id(&mut self, global_id: i32) -> std::io::Result<Option<usize>> {
+        if let Some(index) = self.files.iter().position(|file| file.tag_id == global_id) {
+            self.read_tag(index)?;
+            Ok(Some(index))
+        } else {
+            Ok(None)
+        }
+    }
 }
