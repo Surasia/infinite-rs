@@ -30,10 +30,10 @@ impl TagDependency {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Reads the tag dependency from the given readers implementing Read and BufReaderExt.
+    /// Reads the tag dependency from the given readers implementing BufRead and BufReaderExt.
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader that implements `Read + BufReaderExt` from which to read the data.
+    /// * `reader` - A mutable reference to a reader that implements `BufRead + BufReaderExt` from which to read the data.
     ///
     /// # Returns
     ///

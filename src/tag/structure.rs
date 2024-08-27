@@ -49,7 +49,7 @@ impl TagStruct {
     /// Reads the tag structure from a given buffer reader.
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a `BufReader<&[u8]>` from which to read the data
+    /// * `reader` - A mutable reference to a `BufReader<&[u8]>` that implements `BufRead` from which to read the data
     ///
     /// # Returns
     ///

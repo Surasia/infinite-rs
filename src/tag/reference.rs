@@ -24,10 +24,10 @@ impl TagReference {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Reads the tag reference from the given readers implementing "Read".
+    /// Reads the tag reference from the given readers implementing "BufRead".
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader that implements `Read` from which to read the data.
+    /// * `reader` - A mutable reference to a reader that implements `BufRead` from which to read the data.
     ///
     /// # Returns
     ///

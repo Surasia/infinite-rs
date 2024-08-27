@@ -45,10 +45,10 @@ impl TagFile {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Reads the tag fike from the given readers implementing Read, BufReaderExt and Seek.
+    /// Reads the tag fike from the given readers implementing BufRead, BufReaderExt and Seek.
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader that implements `Read + BufReaderExt + Seek` from which to read the data.
+    /// * `reader` - A mutable reference to a reader that implements `BufRead + BufReaderExt + Seek` from which to read the data.
     ///
     /// # Returns
     ///
@@ -120,7 +120,7 @@ impl TagFile {
     ///
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader that implements `Read, BufReaderExt and Seek` from which to read the data.
+    /// * `reader` - A mutable reference to a reader that implements `BufRead, BufReaderExt and Seek` from which to read the data.
     ///
     /// # Returns
     ///

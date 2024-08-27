@@ -76,10 +76,10 @@ impl CoatingSwatchPODTag {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Reads the cnsw structure type from the given readers implementing Read, BufReaderExt and Seek.
+    /// Reads the cnsw structure type from the given readers implementing BufRead, BufReaderExt and Seek.
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader that implements `Read + BufReaderExt + Seek` from which to read the data.
+    /// * `reader` - A mutable reference to a reader that implements `BufRead + BufReaderExt + Seek` from which to read the data.
     ///
     /// # Returns
     ///
