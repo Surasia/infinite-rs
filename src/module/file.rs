@@ -23,21 +23,33 @@ bitflags! {
     }
 }
 
+bitflags! {
+    #[derive(Debug, Default)]
+    /// Flags that determine how a tag should be read.
+    pub struct FileEntryFlags : u8  {
+        /// If tag is Oodle compressed or not.
+        const COMPRESSED = 0b00000001;
+        /// Indicates that tag is made up of "tag blocks" which need to be joined to assemble the
+        /// entire file entry.
+        const HAS_BLOCKS = 0b00000010;
+        /// "Raw tag" that does not contain a tag header.
+        const RAW_FILE = 0b00000100;
+    }
+}
+
 #[derive(Default, Debug)]
 /// Module file entry structure containing metadata relating to file and required buffer sizes and offsets for the decompressor, as well as global tag ID, resource references and class.
 pub struct ModuleFileEntry {
-    /// Number of resources owned by the file.
-    pub resource_count: u32,
-    /// Index of parent in module.
-    pub parent_index: i32,
-    /// Unknown. (more flags? have to check in with gamergotten)
-    pub unknown: u16,
+    /// Unknown, some sort of size?
+    pub unknown: u8,
+    /// Determine how the file should be read.
+    pub flags: FileEntryFlags,
     /// Number of blocks that make up the file.
     pub block_count: u16,
     /// Index of the first block in the module.
-    pub block_index: u32,
+    pub block_index: i32,
     /// Index of the first resource in the module's resource list.
-    pub resource_index: u32,
+    pub resource_index: i32,
     /// 4 byte-long string for tag group, stored as big endian. This determines how the rest of the tag is read.
     /// Example:
     /// * bitm: Bitmap
@@ -63,15 +75,25 @@ pub struct ModuleFileEntry {
     pub uncompressed_resource_data_size: u32,
     /// Size in bytes of "external" resource data in decompressed buffer. (for instance, havok data or bitmaps)
     pub uncompressed_actual_resource_size: u32,
-    /// Number of blocks for owned resources.
-    pub resource_block_count: u32,
+    /// Power of 2 to align the header buffer to (e.g. 4 = align to a multiple of 16 bytes).
+    pub header_alignment: u8,
+    /// Power of 2 to align the tag data buffer to.
+    pub tag_data_alignment: u8,
+    /// Power of 2 to align the resource data buffer to.
+    pub resource_data_alignment: u8,
+    /// Power of 2 to align the actual resource data buffer to.
+    pub actual_resource_data_alignment: u8,
     /// Offset where the name of the file is located in the string table.
     /// This is no longer valid as of module version 52.
     pub name_offset: u32,
-    /// Index to point back to the original file. -1 if file is not a resource.
-    pub parent_resource: i32,
-    /// MurmurHash3_x86_64 128 bit hash of raw tag path (before cache compilation).
-    pub asset_checksum: u128,
+    /// Used with resources to point back to the parent file. -1 = none
+    pub parent_index: i32,
+    /// Murmur3_x64_128 hash of (what appears to be) the original file that this file was built from.
+    /// This is not always the same thing as the file stored in the module.
+    /// Only verified if the HasBlocks flag is not set.
+    pub asset_hash: i128,
+    /// Number of resources owned by the file.
+    pub resource_count: u32,
     /// Data stream containing a buffer of bytes to read/seek.
     pub data_stream: Cursor<Vec<u8>>,
     /// The actual tag file read from the contents (including header), only valid if file is not a resource.
@@ -94,13 +116,15 @@ impl ModuleFileEntry {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
-        self.resource_count = reader.read_u32::<LE>()?;
-        self.parent_index = reader.read_i32::<LE>()?;
-        self.unknown = reader.read_u16::<LE>()?;
+    pub fn read<R: BufRead + BufReaderExt + Seek>(
+        &mut self,
+        reader: &mut R,
+    ) -> std::io::Result<()> {
+        self.unknown = reader.read_u8()?;
+        self.flags = FileEntryFlags::from_bits_truncate(reader.read_u8()?);
         self.block_count = reader.read_u16::<LE>()?;
-        self.block_index = reader.read_u32::<LE>()?;
-        self.resource_index = reader.read_u32::<LE>()?;
+        self.block_index = reader.read_i32::<LE>()?;
+        self.resource_index = reader.read_i32::<LE>()?;
         self.tag_group = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
         self.data_offset = reader.read_u64::<LE>()? & 0x0000FFFFFFFFFFFF; // Mask last 6 bytes
         self.data_offset_flags =
@@ -112,10 +136,15 @@ impl ModuleFileEntry {
         self.uncompressed_tag_data_size = reader.read_u32::<LE>()?;
         self.uncompressed_resource_data_size = reader.read_u32::<LE>()?;
         self.uncompressed_actual_resource_size = reader.read_u32::<LE>()?;
-        self.resource_block_count = reader.read_u32::<LE>()?;
+        self.header_alignment = reader.read_u8()?;
+        self.tag_data_alignment = reader.read_u8()?;
+        self.resource_data_alignment = reader.read_u8()?;
+        self.actual_resource_data_alignment = reader.read_u8()?;
         self.name_offset = reader.read_u32::<LE>()?;
-        self.parent_resource = reader.read_i32::<LE>()?;
-        self.asset_checksum = reader.read_u128::<LE>()?;
+        self.parent_index = reader.read_i32::<LE>()?;
+        self.asset_hash = reader.read_i128::<LE>()?;
+        self.resource_count = reader.read_u32::<LE>()?;
+        reader.seek_relative(4)?; // Skip some padding?
         Ok(())
     }
 

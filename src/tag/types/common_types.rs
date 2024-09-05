@@ -755,6 +755,13 @@ impl FieldUnused5 {
 /// _34: Padding field, no data stored.
 pub struct FieldPad;
 
+impl FieldPad {
+    pub fn read<R: Seek>(&mut self, reader: &mut R, length: u8) -> std::io::Result<()> {
+        reader.seek(std::io::SeekFrom::Current(length as i64))?;
+        Ok(())
+    }
+}
+
 #[derive(Default, Debug)]
 /// _35: Skip field, no data stored.
 pub struct FieldSkip;
@@ -768,7 +775,7 @@ pub struct FieldExplanation;
 pub struct FieldCustom;
 
 #[derive(Default, Debug)]
-/// _38: Struct field, no data stored.
+/// _38: Struct field, reference to another struct.
 pub struct FieldStruct;
 
 #[derive(Default, Debug)]
@@ -906,14 +913,14 @@ impl FieldData {
 pub struct FieldTagResource {
     pub block: u64, // uintptr at runtime
     pub handle: u32,
-    pub unknown: u32,
+    pub resource_index: u32,
 }
 
 impl FieldTagResource {
     pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
         self.block = reader.read_u64::<LE>()?;
         self.handle = reader.read_u32::<LE>()?;
-        self.unknown = reader.read_u32::<LE>()?;
+        self.resource_index = reader.read_u32::<LE>()?;
         Ok(())
     }
 }

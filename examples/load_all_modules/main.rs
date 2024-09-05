@@ -1,6 +1,8 @@
 use infinite_rs::ModuleFile;
+use std::env;
 
 fn main() -> std::io::Result<()> {
+    env::set_var("RUST_BACKTRACE", "1");
     let mut modules = Vec::new();
     let path = "C:/XboxGames/Halo Infinite/Content/deploy/";
 

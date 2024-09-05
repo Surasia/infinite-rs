@@ -95,6 +95,7 @@ impl ModuleHeader {
         self.build_version = reader.read_u64::<LE>()?;
         self.hd1_delta = reader.read_u64::<LE>()?;
         self.data_size = reader.read_u64::<LE>()?;
+        reader.seek_relative(8)?; // Not needed for now.
         Ok(())
     }
 }

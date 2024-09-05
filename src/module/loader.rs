@@ -65,7 +65,6 @@ impl ModuleFile {
             reader.read_exact(&mut self.string_list)?;
         }
 
-        reader.seek_relative(8)?; // 8 Byte padding
         self.resources = (0..self.header.resource_count)
             .map(|_| reader.read_u32::<LE>().unwrap())
             .collect();
