@@ -7,9 +7,10 @@ This crate currently is in early-development. Please let me know via Github issu
 
 
 ```rust
-use infinite_rs::ModuleFile
+use infinite_rs::ModuleFile;
+use anyhow::Result;
 
-fn load_modules() -> std::io::Result<()> {
+fn load_modules() -> Result<()> {
     // Create new instance of a Module file.
     // These are the main archive files used in Halo Infinite.
     let mut module = ModuleFile::new();
@@ -34,7 +35,7 @@ fn load_modules() -> std::io::Result<()> {
 
 
     // Read tag at index 0 into "tag info".
-    module.read_tag(0)
+    module.read_tag(0);
     println!("{:#?}", module.files[0].tag_info);
     """
     TagFile {
