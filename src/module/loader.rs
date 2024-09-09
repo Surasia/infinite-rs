@@ -1,6 +1,7 @@
 //! Main abstraction file for modules.
 
 use super::{block::ModuleBlockEntry, file::ModuleFileEntry, header::ModuleHeader};
+use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
 use std::{
     fs::File,
@@ -44,8 +45,8 @@ impl ModuleFile {
     /// # Returns
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
-    /// the I/O error if any reading operation fails.
-    pub fn read(&mut self, file_path: String) -> std::io::Result<()> {
+    /// the I/O error if any reading operation fails/header checks fail.
+    pub fn read(&mut self, file_path: String) -> Result<()> {
         let file = File::open(Path::new(&file_path))?;
         self.file_path = file_path;
         let mut reader = BufReader::new(file);

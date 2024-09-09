@@ -11,9 +11,11 @@ categories = ["encoding", "games", "parsing"]
 keywords = ["halo", "halo-infinite", "game-hacking", "reverse-engineering"]
 
 [dependencies]
+anyhow = "1.0.87"
 bitflags = "2.6.0"
 byteorder = "1.5.0"
 num_enum = "0.7.3"
+thiserror = "1.0.63"
 walkdir = "2.5.0"
 
 [build-dependencies.cmake]

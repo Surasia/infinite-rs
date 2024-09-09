@@ -1,11 +1,9 @@
 //! Module Header containing info on the layout of the module file.
 
-use crate::common::extensions::BufReaderExt;
+use crate::common::{errors::ModuleError, extensions::BufReaderExt};
+use anyhow::{bail, Result};
 use byteorder::{ReadBytesExt, LE};
-use std::{
-    fs::File,
-    io::{self, BufReader},
-};
+use std::{fs::File, io::BufReader};
 
 #[derive(Default, Debug)]
 /// Module Header structure containing info on the layout of the module file.
@@ -66,21 +64,15 @@ impl ModuleHeader {
     /// * The magic string is not "mohd"
     /// * The version is less than or equal to 0x34
     /// * Any I/O error occurs while reading
-    pub fn read(&mut self, reader: &mut BufReader<File>) -> std::io::Result<()> {
+    pub fn read(&mut self, reader: &mut BufReader<File>) -> Result<()> {
         self.magic = reader.read_fixed_string(4)?;
         if self.magic != "mohd" {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Invalid magic: {}", self.magic),
-            ));
+            bail!(ModuleError::IncorrectMagic(self.magic.clone()));
         }
 
         self.version = reader.read_i32::<LE>()?;
         if self.version <= 0x34 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("Invalid module version: {}", self.version),
-            ));
+            bail!(ModuleError::IncorrectVersion(self.version))
         }
 
         self.module_id = reader.read_i64::<LE>()?;

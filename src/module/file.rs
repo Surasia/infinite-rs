@@ -1,7 +1,8 @@
 //! Module file entry containing metadata relating to tags and functions to read them.
 
 use super::{block::ModuleBlockEntry, kraken::decompress};
-use crate::{common::extensions::BufReaderExt, tag::loader::TagFile};
+use crate::{common::extensions::BufReaderExt, tag::loader::TagFile, ModuleFile};
+use anyhow::Result;
 use bitflags::bitflags;
 use byteorder::{ReadBytesExt, LE};
 use std::{
@@ -93,7 +94,7 @@ pub struct ModuleFileEntry {
     /// Only verified if the HasBlocks flag is not set.
     pub asset_hash: i128,
     /// Number of resources owned by the file.
-    pub resource_count: u32,
+    pub resource_count: i32,
     /// Data stream containing a buffer of bytes to read/seek.
     pub data_stream: Cursor<Vec<u8>>,
     /// The actual tag file read from the contents (including header), only valid if file is not a resource.
@@ -143,7 +144,7 @@ impl ModuleFileEntry {
         self.name_offset = reader.read_u32::<LE>()?;
         self.parent_index = reader.read_i32::<LE>()?;
         self.asset_hash = reader.read_i128::<LE>()?;
-        self.resource_count = reader.read_u32::<LE>()?;
+        self.resource_count = reader.read_i32::<LE>()?;
         reader.seek_relative(4)?; // Skip some padding?
         Ok(())
     }
@@ -158,14 +159,14 @@ impl ModuleFileEntry {
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
+    /// Returns `Ok(())` if the read operation is successful, or an `(anyhow) Error` containing
     /// the I/O error if any reading operation fails.
     pub fn read_tag(
         &mut self,
         file_path: &String,
         data_offset: u64,
         blocks: &[ModuleBlockEntry],
-    ) -> std::io::Result<()> {
+    ) -> Result<()> {
         if !self.is_loaded {
             let file = File::open(Path::new(file_path))?;
             let mut reader = BufReader::new(file);
@@ -326,5 +327,26 @@ impl ModuleFileEntry {
             decompress(block, data, file_entry.total_uncompressed_size as usize);
         }
         Ok(())
+    }
+
+    /// Reads the resources referenced by a module entry.
+    ///
+    /// # Arguments
+    ///
+    /// * `module` - A static reference to the module of where the resources reside.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
+    /// the I/O error if any reading operation fails.
+    pub fn read_resources(
+        &self,
+        module: &'static ModuleFile,
+    ) -> std::io::Result<Vec<&ModuleFileEntry>> {
+        let mut resources = Vec::with_capacity(self.resource_count as usize);
+        for i in self.resource_index..self.resource_count {
+            resources.push(&module.files[module.resources[i as usize] as usize]);
+        }
+        Ok(resources)
     }
 }

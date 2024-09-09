@@ -1,6 +1,7 @@
 //! Tag Header containing info on the layout of the tag file.
 
-use crate::common::extensions::BufReaderExt;
+use crate::common::{errors::TagError, extensions::BufReaderExt};
+use anyhow::{bail, Result};
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
 
@@ -11,7 +12,7 @@ pub struct TagHeader {
     pub magic: String,
     /// Should be 27.
     /// Note: this is also the tag version from Halo 5!
-    pub version: u32,
+    pub version: i32,
     /// Secondary GUID to identify the root structure.
     pub root_struct_guid: i64,
     /// Checksum generated from unknown algorithm
@@ -72,21 +73,15 @@ impl TagHeader {
     /// * The magic string is not "ucsh"
     /// * The version is less than or equal to 17
     /// * Any I/O error occurs while reading
-    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.magic = reader.read_fixed_string(4)?;
         if self.magic != "ucsh" {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("Invalid tag magic: {}", self.magic),
-            ));
+            bail!(TagError::IncorrectMagic(self.magic.clone()))
         }
 
-        self.version = reader.read_u32::<LE>()?;
+        self.version = reader.read_i32::<LE>()?;
         if self.version != 27 {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                format!("Invalid tag version: {}", self.version),
-            ));
+            bail!(TagError::IncorrectVersion(self.version))
         }
 
         self.root_struct_guid = reader.read_i64::<LE>()?;

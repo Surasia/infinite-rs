@@ -1,5 +1,7 @@
 //! Main abstraction file for tags.
 
+use anyhow::Result;
+
 use super::{
     data_reference::TagDataReference,
     datablock::TagDataBlock,
@@ -52,12 +54,9 @@ impl TagFile {
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
+    /// Returns `Ok(())` if the header is successfully read, or an `(anyhow) Error` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: BufRead + BufReaderExt + Seek>(
-        &mut self,
-        mut reader: &mut R,
-    ) -> std::io::Result<()> {
+    pub fn read<R: BufRead + BufReaderExt + Seek>(&mut self, mut reader: &mut R) -> Result<()> {
         self.header.read(reader)?;
         self.dependencies = (0..self.header.dependency_count as usize)
             .map(|_| {
