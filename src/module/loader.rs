@@ -94,9 +94,9 @@ impl ModuleFile {
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
+    /// Returns `Ok(())` if the read operation is successful, or an `(anyhow) Error` containing
     /// the I/O error if any reading operation fails.
-    pub fn read_tag(&mut self, index: usize) -> std::io::Result<()> {
+    pub fn read_tag(&mut self, index: usize) -> Result<()> {
         // -1 indicates a resource tag.
         if self.files[index].tag_id != -1 {
             self.files[index].read_tag(&self.file_path, self.file_data_offset, &self.blocks)?;
@@ -114,7 +114,7 @@ impl ModuleFile {
     /// # Returns
     ///
     /// Returns the index of the file if successful, 0 if it fails. Any I/O Error is also returned if it occurs.
-    pub fn read_tag_from_id(&mut self, global_id: i32) -> std::io::Result<Option<usize>> {
+    pub fn read_tag_from_id(&mut self, global_id: i32) -> Result<Option<usize>> {
         if let Some(index) = self.files.iter().position(|file| file.tag_id == global_id) {
             self.read_tag(index)?;
             Ok(Some(index))
