@@ -1,5 +1,7 @@
 //! Main abstraction file for modules.
 
+use crate::common::extensions::BufReaderExt;
+
 use super::{block::ModuleBlockEntry, file::ModuleFileEntry, header::ModuleHeader};
 use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
@@ -52,14 +54,7 @@ impl ModuleFile {
         let mut reader = BufReader::new(file);
 
         self.header.read(&mut reader)?;
-
-        self.files = (0..self.header.file_count)
-            .map(|_| {
-                let mut entry = ModuleFileEntry::new();
-                entry.read(&mut reader).unwrap();
-                entry
-            })
-            .collect();
+        self.files = reader.read_enumerable::<ModuleFileEntry>(self.header.file_count as usize)?;
 
         if self.header.strings_size != 0 {
             self.string_list = Vec::with_capacity(self.header.strings_size as usize);
@@ -69,14 +64,8 @@ impl ModuleFile {
         self.resources = (0..self.header.resource_count)
             .map(|_| reader.read_u32::<LE>().unwrap())
             .collect();
-
-        self.blocks = (0..self.header.block_count)
-            .map(|_| {
-                let mut block = ModuleBlockEntry::new();
-                block.read(&mut reader).unwrap();
-                block
-            })
-            .collect();
+        self.blocks =
+            reader.read_enumerable::<ModuleBlockEntry>(self.header.block_count as usize)?;
 
         // Align to 0x?????000
         let stream_position = reader.stream_position()?;

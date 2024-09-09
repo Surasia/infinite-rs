@@ -1,6 +1,7 @@
 //! Module file entry containing metadata relating to tags and functions to read them.
 
 use super::{block::ModuleBlockEntry, kraken::decompress};
+use crate::common::extensions::Readable;
 use crate::{common::extensions::BufReaderExt, tag::loader::TagFile, ModuleFile};
 use anyhow::Result;
 use bitflags::bitflags;
@@ -103,11 +104,7 @@ pub struct ModuleFileEntry {
     is_loaded: bool,
 }
 
-impl ModuleFileEntry {
-    /// Allocate new ModuleFileEntry and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl Readable for ModuleFileEntry {
     /// Reads the metadata of a module file entry from the given reader.
     /// # Arguments
     ///
@@ -117,10 +114,7 @@ impl ModuleFileEntry {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read<R: BufRead + BufReaderExt + Seek>(
-        &mut self,
-        reader: &mut R,
-    ) -> std::io::Result<()> {
+    fn read<R: BufRead + BufReaderExt + Seek>(&mut self, reader: &mut R) -> Result<()> {
         self.unknown = reader.read_u8()?;
         self.flags = FileEntryFlags::from_bits_truncate(reader.read_u8()?);
         self.block_count = reader.read_u16::<LE>()?;
@@ -148,7 +142,9 @@ impl ModuleFileEntry {
         reader.seek_relative(4)?; // Skip some padding?
         Ok(())
     }
+}
 
+impl ModuleFileEntry {
     /// Reads and loads tag data from a file.
     ///
     /// # Arguments
@@ -337,12 +333,9 @@ impl ModuleFileEntry {
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
-    /// the I/O error if any reading operation fails.
-    pub fn read_resources(
-        &self,
-        module: &'static ModuleFile,
-    ) -> std::io::Result<Vec<&ModuleFileEntry>> {
+    /// Returns `Ok(Vec<&ModuleFileEntry>)` if the read operation is successful, or an `(anyhow)
+    /// Error` if the requested resource wasn't found in the index.
+    pub fn read_resources(&self, module: &'static ModuleFile) -> Result<Vec<&ModuleFileEntry>> {
         let mut resources = Vec::with_capacity(self.resource_count as usize);
         for i in self.resource_index..self.resource_count {
             resources.push(&module.files[module.resources[i as usize] as usize]);

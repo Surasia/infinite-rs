@@ -1,7 +1,10 @@
 //! Module block containing info relating to Kraken compression.
 
+use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
-use std::{fs::File, io::BufReader};
+use std::io::BufRead;
+
+use crate::common::extensions::Readable;
 
 #[derive(Default, Debug)]
 /// Module block containing info relating to Kraken compression.
@@ -22,11 +25,7 @@ pub struct ModuleBlockEntry {
     pub is_compressed: bool,
 }
 
-impl ModuleBlockEntry {
-    /// Allocate new ModuleBlockEntry and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl Readable for ModuleBlockEntry {
     /// Reads the module block entry data from the provided buffered reader.
     /// # Arguments
     ///
@@ -36,7 +35,7 @@ impl ModuleBlockEntry {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read(&mut self, reader: &mut BufReader<File>) -> std::io::Result<()> {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.compressed_offset = reader.read_i32::<LE>()?;
         self.compressed_size = reader.read_i32::<LE>()?;
         self.decompressed_offset = reader.read_i32::<LE>()?;

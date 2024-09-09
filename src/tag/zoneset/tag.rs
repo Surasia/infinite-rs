@@ -1,5 +1,7 @@
 //! Zoneset tag containing its name and reference ID.
 
+use crate::common::extensions::Readable;
+use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
 
@@ -11,11 +13,8 @@ pub struct TagZonesetTag {
     pub string_id: i32,
 }
 
-impl TagZonesetTag {
+impl Readable for TagZonesetTag {
     /// Allocate new TagZonesetTag and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
     /// Reads the tag zoneset tag from the given readers implementing "BufRead".
     /// # Arguments
     ///
@@ -25,7 +24,7 @@ impl TagZonesetTag {
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Err` containing
     /// the I/O error if any reading operation fails.
-    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.global_id = reader.read_i32::<LE>()?;
         self.string_id = reader.read_i32::<LE>()?;
         Ok(())

@@ -1,8 +1,9 @@
 //! Reference to external tag that will get loaded on access.
 
-use std::io::BufRead;
-
+use crate::common::extensions::Readable;
+use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
+use std::io::BufRead;
 
 #[derive(Default, Debug)]
 /// Structure that defines a reference to a tag.
@@ -19,11 +20,7 @@ pub struct TagReference {
     pub dependency_index: i32,
 }
 
-impl TagReference {
-    /// Allocate new TagReference and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl Readable for TagReference {
     /// Reads the tag reference from the given readers implementing "BufRead".
     /// # Arguments
     ///
@@ -33,7 +30,7 @@ impl TagReference {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.field_block = reader.read_u32::<LE>()?;
         self.field_offset = reader.read_u32::<LE>()?;
         self.name_offset = reader.read_u32::<LE>()?;

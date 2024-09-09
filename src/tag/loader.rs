@@ -14,7 +14,7 @@ use super::{
     },
     zoneset::{header::TagZonesetHeader, instance::TagZoneset},
 };
-use crate::common::extensions::BufReaderExt;
+use crate::common::extensions::{BufReaderExt, Readable};
 use std::any::Any;
 use std::io::{BufRead, Seek, SeekFrom};
 
@@ -42,11 +42,7 @@ pub struct TagFile {
     pub structure: Option<Box<dyn Any>>,
 }
 
-impl TagFile {
-    /// Allocate new TagFile and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl Readable for TagFile {
     /// Reads the tag fike from the given readers implementing BufRead, BufReaderExt and Seek.
     /// # Arguments
     ///
@@ -56,62 +52,34 @@ impl TagFile {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `(anyhow) Error` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: BufRead + BufReaderExt + Seek>(&mut self, mut reader: &mut R) -> Result<()> {
+    fn read<R: BufRead + BufReaderExt + Seek>(&mut self, reader: &mut R) -> Result<()> {
         self.header.read(reader)?;
-        self.dependencies = (0..self.header.dependency_count as usize)
-            .map(|_| {
-                let mut dependency = TagDependency::new();
-                dependency.read(reader).unwrap();
-                dependency
-            })
-            .collect();
+        self.dependencies =
+            reader.read_enumerable::<TagDependency>(self.header.dependency_count as usize)?;
 
-        self.datablock = (0..self.header.datablock_count as usize)
-            .map(|_| {
-                let mut block = TagDataBlock::new();
-                block.read(reader).unwrap();
-                block
-            })
-            .collect();
+        self.datablock =
+            reader.read_enumerable::<TagDataBlock>(self.header.datablock_count as usize)?;
 
-        self.structs = (0..self.header.tagstruct_count as usize)
-            .map(|_| {
-                let mut block = TagStruct::new();
-                block.read(reader).unwrap();
-                block
-            })
-            .collect();
+        self.structs = reader.read_enumerable::<TagStruct>(self.header.tagstruct_count as usize)?;
 
-        self.data_references = (0..self.header.data_reference_count as usize)
-            .map(|_| {
-                let mut block = TagDataReference::new();
-                block.read(reader).unwrap();
-                block
-            })
-            .collect();
+        self.data_references = reader
+            .read_enumerable::<TagDataReference>(self.header.data_reference_count as usize)?;
 
-        self.tag_references = (0..self.header.tag_reference_count as usize)
-            .map(|_| {
-                let mut block = TagReference::new();
-                block.read(reader).unwrap();
-                block
-            })
-            .collect();
+        self.tag_references =
+            reader.read_enumerable::<TagReference>(self.header.tag_reference_count as usize)?;
 
-        self.zoneset_header.read(&mut reader)?;
-        self.zonesets = (0..self.zoneset_header.zoneset_count as usize)
-            .map(|_| {
-                let mut zoneset = TagZoneset::new();
-                zoneset.read(reader).unwrap();
-                zoneset
-            })
-            .collect();
+        self.zoneset_header.read(reader)?;
+
+        self.zonesets =
+            reader.read_enumerable::<TagZoneset>(self.zoneset_header.zoneset_count as usize)?;
 
         // Ensure that tag data starts where it is supposed to.
         reader.seek(SeekFrom::Start(self.header.header_size as u64))?;
         Ok(())
     }
+}
 
+impl TagFile {
     /// Reads the "structure" according to a tag's group.
     ///
     /// This function creates a Box<> smart pointer depending on the type of the tag.
@@ -153,7 +121,7 @@ impl TagFile {
 
     /// Get the "structure" according to a tag's group.
     ///
-    /// This function returns an Option<&T> where T is the type specified when calling the function.
+    /// This function returns an `Option<&T>` where `T` is the type specified when calling the function.
     ///
     /// # Type Parameters
     ///

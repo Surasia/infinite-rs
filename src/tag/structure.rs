@@ -1,8 +1,11 @@
 //! Hierarchical structure entry of tag.
 
+use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
 use num_enum::TryFromPrimitive;
 use std::io::BufRead;
+
+use crate::common::extensions::Readable;
 
 #[derive(Default, Debug, TryFromPrimitive)]
 #[repr(u16)]
@@ -41,11 +44,7 @@ pub struct TagStruct {
     pub field_offset: u32,
 }
 
-impl TagStruct {
-    /// Allocate new TagStruct and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl Readable for TagStruct {
     /// Reads the tag structure from a given buffer reader.
     /// # Arguments
     ///
@@ -54,7 +53,7 @@ impl TagStruct {
     /// # Returns
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `std::io::Error` if any read fails.
-    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.guid = reader.read_u128::<LE>()?;
         self.struct_type = TagStructType::try_from(reader.read_u16::<LE>()?).unwrap();
         self.unknown = reader.read_u16::<LE>()?;

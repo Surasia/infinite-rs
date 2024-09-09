@@ -1,5 +1,7 @@
 //! Instance of a zoneset tag that comes after the tag header.
 
+use crate::common::extensions::Readable;
+use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
 
@@ -16,11 +18,8 @@ pub struct TagZonesetInstanceHeader {
     pub footer_count: u32,
 }
 
-impl TagZonesetInstanceHeader {
+impl Readable for TagZonesetInstanceHeader {
     /// Allocate new TagZonesetInstanceHeader and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
     /// Reads the tag zoneset instance header from the given readers implementing "BufRead".
     /// # Arguments
     ///
@@ -30,7 +29,7 @@ impl TagZonesetInstanceHeader {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.string_id = reader.read_i32::<LE>()?;
         self.tag_count = reader.read_u32::<LE>()?;
         self.parent_count = reader.read_u32::<LE>()?;

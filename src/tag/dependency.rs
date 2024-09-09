@@ -1,6 +1,7 @@
 //! Tag dependency structure containing info on lazy-loaded tags.
 
-use crate::common::extensions::BufReaderExt;
+use crate::common::extensions::{BufReaderExt, Readable};
+use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
 
@@ -25,11 +26,8 @@ pub struct TagDependency {
     pub parent_index: i32,
 }
 
-impl TagDependency {
+impl Readable for TagDependency {
     /// Allocate new TagDependency and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
     /// Reads the tag dependency from the given readers implementing BufRead and BufReaderExt.
     /// # Arguments
     ///
@@ -39,7 +37,7 @@ impl TagDependency {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.tag_group = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
         self.name_offset = reader.read_u32::<LE>()?;
         self.asset_id = reader.read_u64::<LE>()?;

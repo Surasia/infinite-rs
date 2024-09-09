@@ -1,7 +1,7 @@
 use byteorder::{ReadBytesExt, LE};
 use std::io::{BufRead, Seek};
 
-use crate::common::extensions::BufReaderExt;
+use crate::common::extensions::{BufReaderExt, Readable};
 
 #[derive(Default, Debug)]
 /// _0: 32 Byte strings that usually store some sort of short name.
@@ -9,8 +9,8 @@ pub struct FieldString {
     pub string: String, // 32 bytes
 }
 
-impl FieldString {
-    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> std::io::Result<()> {
+impl Readable for FieldString {
+    fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> anyhow::Result<()> {
         self.string = reader.read_fixed_string(32)?;
         Ok(())
     }

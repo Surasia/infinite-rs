@@ -1,8 +1,9 @@
 //! Reference to binary blob inside tag that isn't defined by a structure.
 
-use std::io::BufRead;
-
+use crate::common::extensions::Readable;
+use anyhow::Result;
 use byteorder::{ReadBytesExt, LE};
+use std::io::BufRead;
 
 #[derive(Default, Debug)]
 /// Structure that defines a reference to a blob of data inside tag data.
@@ -20,11 +21,7 @@ pub struct TagDataReference {
     pub field_offset: u32,
 }
 
-impl TagDataReference {
-    /// Allocate new TagDataReference and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
+impl Readable for TagDataReference {
     /// Reads the tag data reference from the given readers implementing "BufRead".
     /// # Arguments
     ///
@@ -34,7 +31,7 @@ impl TagDataReference {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> std::io::Result<()> {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.parent_struct_index = reader.read_i32::<LE>()?;
         self.unknown = reader.read_i32::<LE>()?;
         self.target_index = reader.read_i32::<LE>()?;
