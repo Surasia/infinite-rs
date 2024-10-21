@@ -1,6 +1,6 @@
 [package]
 name = "infinite-rs"
-version = "0.2.2"
+version = "0.3.0"
 edition = "2021"
 authors = ["Surasia"]
 license = "Unlicense OR MIT"
@@ -11,12 +11,24 @@ categories = ["encoding", "games", "parsing"]
 keywords = ["halo", "halo-infinite", "game-hacking", "reverse-engineering"]
 
 [dependencies]
-anyhow = "1.0.87"
 bitflags = "2.6.0"
 byteorder = "1.5.0"
 num_enum = "0.7.3"
 thiserror = "1.0.63"
+serde = { version = "1.0.210", optional = true, features = [
+    "derive",
+], default-features = true }
+
+[dev-dependencies]
+serde_json = { version = "1.0.129" }
+anyhow = "1.0.87"
 walkdir = "2.5.0"
 
 [build-dependencies.cmake]
 version = "0.1"
+
+[profile.release]
+debug = true
+
+[features]
+serde = ["dep:serde"]

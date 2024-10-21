@@ -7,7 +7,11 @@ edition = "2021"
 [dependencies]
 infinite-rs = { path = "../.." }
 walkdir = "2.5.0"
+anyhow = "1.0.89"
 
 [[bin]]
 name = "load_all_modules"
 path = "main.rs"
+
+[features]
+serde = ["dep:serde", "dep:serde_json"]

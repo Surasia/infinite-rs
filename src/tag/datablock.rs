@@ -1,7 +1,6 @@
 //! Tag datablock specifying the section for tag structs.
 
-use crate::common::extensions::Readable;
-use anyhow::Result;
+use crate::common::{errors::Error, extensions::Readable};
 use byteorder::{ReadBytesExt, LE};
 use num_enum::TryFromPrimitive;
 use std::io::BufRead;
@@ -27,7 +26,7 @@ pub struct TagDataBlock {
     /// The size of the data block entry in bytes.
     pub entry_size: u32,
     /// How many unused bytes come before the offset.
-    pub padding: u16,
+    padding: u16,
     /// Where the data block is stored.
     pub section_type: TagSectionType,
     /// Offset of where the data is stored from the start of the tag file.
@@ -35,16 +34,10 @@ pub struct TagDataBlock {
 }
 
 impl Readable for TagDataBlock {
-    /// Reads the tag data block from the given readers implementing "BufRead".
-    /// # Arguments
-    ///
-    /// * `reader` - A mutable reference to a reader that implements `BufRead` from which to read the data.
-    ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
-    /// or if the header data is invalid.
-    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
+    fn read<R>(&mut self, reader: &mut R) -> Result<(), Error>
+    where
+        R: BufRead,
+    {
         self.entry_size = reader.read_u32::<LE>()?;
         self.padding = reader.read_u16::<LE>()?;
         self.section_type = TagSectionType::try_from(reader.read_u16::<LE>()?).unwrap();

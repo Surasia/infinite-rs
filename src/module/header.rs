@@ -1,53 +1,51 @@
 //! Module Header containing info on the layout of the module file.
 
-use crate::common::{errors::ModuleError, extensions::BufReaderExt};
-use anyhow::{bail, Result};
 use byteorder::{ReadBytesExt, LE};
 use std::{fs::File, io::BufReader};
 
+use crate::common::errors::{Error, ModuleError};
+
+const HEADER_MAGIC: u32 = 0x6468_6F6D; // "mohd"
 #[derive(Default, Debug)]
 /// Module Header structure containing info on the layout of the module file.
-/// Version 52+.
+/// Version 53+.
 pub struct ModuleHeader {
-    /// Should be "mohd".
-    pub magic: String,
+    /// Should be "mohd" (0x64686F6D)
+    magic: u32,
     /// Flight 1: 48 /
     /// Flight 2: 51 & Retail /
     /// Season 3+: 52
-    pub version: i32,
+    /// CU30+: 53
+    version: i32,
     /// Unique identifier. (not a hash?)
-    pub module_id: i64,
-    /// Amount of files in module.
-    pub file_count: u32,
+    module_id: i64,
+    /// Number of files in the module.
+    pub(super) file_count: u32,
     /// Unknown: not in all modules.
-    pub manifest0_count: u32,
+    manifest0_count: u32,
     /// Unknown: present in most modules.
-    pub manifest1_count: u32,
+    manifest1_count: u32,
     /// Unknown: not present in any modules.
-    pub manifest2_count: u32,
-    /// Index of the first resource entry (file_count - resource_count)
-    pub resource_index: i32,
+    manifest2_count: u32,
+    /// Index of the first resource entry (`file_count` - `resource_count`).
+    resource_index: i32,
     /// Total size in bytes of the string table.
-    pub strings_size: u32,
+    strings_size: u32,
     /// Number of resource files.
-    pub resource_count: u32,
+    pub(super) resource_count: u32,
     /// Number of data blocks.
-    pub block_count: u32,
+    pub(super) block_count: u32,
     /// Same between modules, changes per build?
-    pub build_version: u64,
+    build_version: u64,
     /// If non-zero, requires hd1 file.
-    pub hd1_delta: u64,
-    /// Total size of packed data in module.
-    /// Both compressed and uncompressed
-    /// Starts after files, blocks, resources have been read.
-    pub data_size: u64,
+    pub(super) hd1_delta: u64,
+    /// Total size of packed data in the module.
+    /// Both compressed and uncompressed.
+    /// Starts after files, blocks, and resources have been read.
+    pub(super) data_size: u64,
 }
 
 impl ModuleHeader {
-    /// Allocate new ModuleHeader and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
     /// Reads the module header from the given buffered reader.
     /// # Arguments
     ///
@@ -55,7 +53,7 @@ impl ModuleHeader {
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the header is successfully read, or an `Err` if an I/O error occurs
+    /// Returns `Ok(())` if the header is successfully read, or an `Error` if an I/O error occurs
     /// or if the header data is invalid.
     ///
     /// # Errors
@@ -64,15 +62,17 @@ impl ModuleHeader {
     /// * The magic string is not "mohd"
     /// * The version is less than or equal to 0x34
     /// * Any I/O error occurs while reading
-    pub fn read(&mut self, reader: &mut BufReader<File>) -> Result<()> {
-        self.magic = reader.read_fixed_string(4)?;
-        if self.magic != "mohd" {
-            bail!(ModuleError::IncorrectMagic(self.magic.clone()));
+    pub(super) fn read(&mut self, reader: &mut BufReader<File>) -> Result<(), Error> {
+        self.magic = reader.read_u32::<LE>()?;
+        if self.magic != HEADER_MAGIC {
+            return Err(Error::ModuleError(ModuleError::IncorrectMagic(self.magic)));
         }
 
         self.version = reader.read_i32::<LE>()?;
         if self.version <= 0x34 {
-            bail!(ModuleError::IncorrectVersion(self.version))
+            return Err(Error::ModuleError(ModuleError::IncorrectVersion(
+                self.version,
+            )));
         }
 
         self.module_id = reader.read_i64::<LE>()?;

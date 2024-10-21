@@ -1,68 +1,68 @@
 //! Tag Header containing info on the layout of the tag file.
 
-use crate::common::{errors::TagError, extensions::BufReaderExt};
-use anyhow::{bail, Result};
+use crate::common::{
+    errors::{Error, TagError},
+    extensions::BufReaderExt,
+};
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
+
+const HEADER_MAGIC: u32 = 0x6873_6375; // "ucsh"
 
 #[derive(Default, Debug)]
 /// Tag Header structure containing info on the layout of the tag file.
 pub struct TagHeader {
-    /// Has to be "ucsh"
-    pub magic: String,
+    /// Has to be "ucsh" (0x68736375)
+    magic: u32,
     /// Should be 27.
     /// Note: this is also the tag version from Halo 5!
-    pub version: i32,
+    version: i32,
     /// Secondary GUID to identify the root structure.
-    pub root_struct_guid: i64,
+    root_struct_guid: i64,
     /// Checksum generated from unknown algorithm
-    pub checksum: i64,
+    checksum: i64,
     /// Number of tags required to load tag.
-    pub dependency_count: i32,
+    pub(super) dependency_count: u32,
     /// Number of datablocks that exist within tag (offsets, sections etc).
-    pub datablock_count: i32,
+    pub(super) datablock_count: u32,
     /// Number of tag struct definitions that make up the actual structure of the tag.
-    pub tagstruct_count: i32,
+    pub(super) tagstruct_count: u32,
     /// Number of "external" data references (to other tags) in tag.
-    pub data_reference_count: i32,
+    pub(super) data_reference_count: u32,
     /// Number of internal references to structures.
-    pub tag_reference_count: i32,
+    pub(super) tag_reference_count: u32,
     /// Size in bytes of string table inside tag.
     /// Unused after Halo 5.
-    pub string_table_size: u32,
+    string_table_size: u32,
     /// Size in bytes of "zoneset" section of tag.
     /// Unknown use.
-    pub zoneset_size: u32,
+    zoneset_size: u32,
     /// Unknown. Possibly used to split something in memory.
-    pub unknown: u32,
+    unknown: u32,
     /// Size of the header and the fields read by it (dependencies, datablocks, etc.).
     /// Important as sometimes the offset after reading those fields does not match up to where tag data starts.
     /// Might be some sort of internal padding measure.
-    pub header_size: u32,
+    pub(crate) header_size: u32,
     /// Size of actual data in tag, referenced in tag structs.
-    pub data_size: u32,
+    data_size: u32,
     /// Size of resource in tag (after data!)
-    pub resource_size: u32,
+    resource_size: u32,
     /// Size of "external" data, for instance Havok data.
-    pub actual_resource_size: u32,
+    actual_resource_size: u32,
     /// Power of 2 to align the header to.
-    pub header_alignment: u8,
+    header_alignment: u8,
     /// Power of 2 to align the tag data to.
-    pub tag_alignment: u8,
+    tag_alignment: u8,
     /// Power of 2 to align resource data to.
-    pub resource_alignment: u8,
+    resource_alignment: u8,
     /// Power of 2 to align actual resource to.
-    pub actual_resource_alignment: u8,
+    actual_resource_alignment: u8,
     /// Unknown if this is consistent: Indicates if the file is a resource.
     pub is_resource: bool,
 }
 
 impl TagHeader {
-    /// Allocate new TagHeader and set it to default values.
-    pub fn new() -> Self {
-        Self::default()
-    }
-    /// Reads the tag header from the given readers implementing BufRead and BufReaderExt.
+    /// Reads the tag header from the given readers implementing `BufRead` and `BufReaderExt`.
     /// # Arguments
     ///
     /// * `reader` - A mutable reference to a reader that implements `BufRead + BufReaderExt` from which to read the data.
@@ -73,24 +73,27 @@ impl TagHeader {
     /// * The magic string is not "ucsh"
     /// * The version is less than or equal to 17
     /// * Any I/O error occurs while reading
-    pub fn read<R: BufRead + BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
-        self.magic = reader.read_fixed_string(4)?;
-        if self.magic != "ucsh" {
-            bail!(TagError::IncorrectMagic(self.magic.clone()))
+    pub fn read<R>(&mut self, reader: &mut R) -> Result<(), Error>
+    where
+        R: BufRead + BufReaderExt,
+    {
+        self.magic = reader.read_u32::<LE>()?;
+        if self.magic != HEADER_MAGIC {
+            return Err(Error::TagError(TagError::IncorrectMagic(self.magic)));
         }
 
         self.version = reader.read_i32::<LE>()?;
         if self.version != 27 {
-            bail!(TagError::IncorrectVersion(self.version))
+            return Err(Error::TagError(TagError::IncorrectVersion(self.version)));
         }
 
         self.root_struct_guid = reader.read_i64::<LE>()?;
         self.checksum = reader.read_i64::<LE>()?;
-        self.dependency_count = reader.read_i32::<LE>()?;
-        self.datablock_count = reader.read_i32::<LE>()?;
-        self.tagstruct_count = reader.read_i32::<LE>()?;
-        self.data_reference_count = reader.read_i32::<LE>()?;
-        self.tag_reference_count = reader.read_i32::<LE>()?;
+        self.dependency_count = reader.read_u32::<LE>()?;
+        self.datablock_count = reader.read_u32::<LE>()?;
+        self.tagstruct_count = reader.read_u32::<LE>()?;
+        self.data_reference_count = reader.read_u32::<LE>()?;
+        self.tag_reference_count = reader.read_u32::<LE>()?;
         self.string_table_size = reader.read_u32::<LE>()?;
         self.zoneset_size = reader.read_u32::<LE>()?;
         self.unknown = reader.read_u32::<LE>()?;
