@@ -116,7 +116,14 @@ fn load_cmsw(module: &mut ModuleFile, index: usize) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let mut modules = load_modules(String::from("C:/XboxGames/Halo Infinite/Content/deploy/"))?;
+    let mut pc_modules =
+        load_modules(String::from("C:/XboxGames/Halo Infinite/Content/deploy/pc"))?;
+
+    let mut any_modules = load_modules(String::from(
+        "C:/XboxGames/Halo Infinite/Content/deploy/any",
+    ))?;
+
+    let mut modules = pc_modules.iter_mut().chain(any_modules.iter_mut());
 
     for module in &mut modules {
         for index in 0..module.files.len() {

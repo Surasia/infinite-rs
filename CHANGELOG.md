@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.3.1 - 2024-10-21
+- Resource tags can now be read using ModuleFile::read_tag.
+
 ## 0.3.0 - 2024-10-21
 - Reworked build script to run on linux
 - Updated dependencies

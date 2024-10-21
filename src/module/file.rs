@@ -175,13 +175,11 @@ impl ModuleFileEntry {
         let data_stream = BufReader::new(Cursor::new(data));
         self.data_stream = Some(data_stream);
 
-        if self.tag_id != -1 {
-            let mut tagfile = TagFile::new();
-            if let Some(ref mut stream) = self.data_stream {
-                tagfile.read(stream)?;
-            }
-            self.tag_info = Some(tagfile);
+        let mut tagfile = TagFile::new();
+        if let Some(ref mut stream) = self.data_stream {
+            tagfile.read(stream)?;
         }
+        self.tag_info = Some(tagfile);
 
         self.is_loaded = true;
         Ok(())

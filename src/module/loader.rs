@@ -53,6 +53,9 @@ impl ModuleFile {
     /// Returns `Ok(())` if the read operation is successful, or an `Error` containing
     /// the I/O error if any reading operation fails.
     pub fn read(&mut self, file_path: String) -> Result<(), Error> {
+        if file_path.contains("deploy/ds") {
+            println!("WARNING: Loading {{ds}} module, might contain stub tags!");
+        }
         let file = File::open(Path::new(&file_path))?;
         self.file_path = file_path;
         let mut reader = BufReader::new(file);
