@@ -1,26 +1,16 @@
-infinite-rs
-===
+#![warn(clippy::pedantic)]
+#![allow(clippy::missing_errors_doc)]
+#![warn(clippy::missing_safety_doc)]
+#![allow(clippy::module_name_repetitions)]
+#![warn(clippy::all)]
+/*!
 Simple and fast deserialization library for Halo Infinite.
 
-This crate currently is in early-development. Please let me know via Github issues about any issues you encounter using this project.
-
-[![Crates.io](https://img.shields.io/crates/v/infinite-rs.svg)](https://crates.io/crates/infinite-rs)
-[![Documentation](https://docs.rs/infinite-rs/badge.svg)](https://docs.rs/infinite-rs)
-![License](https://img.shields.io/crates/l/infinite-rs.svg)
-
-## Documentation
-- Documentation on this project can be found at [docs.rs](https://docs.rs/infinite-rs).
-
-## Usage/Example
-
-Simple and fast deserialization library for Halo Infinite.
-
-### Getting Started: Loading a Module file
+## Getting Started: Loading a Module file
 Modules are the file format that store "tags" in Halo Infinite. These files are used to store all the assets in the game, including models, textures, metadata, and more. `infinite-rs` provides a simple interface to load these tags, starting with loading the module files themselves.
 
 ```rust
-use infinite_rs::ModuleFile;
-use anyhow::Result;
+use infinite_rs::{ModuleFile, Result};
 
 fn load_modules() -> Result<()> {
     // Create new instance of a Module file.
@@ -32,14 +22,13 @@ fn load_modules() -> Result<()> {
 }
 ```
 
-### Loading a tag file
+## Loading a tag file
 After we have loaded a module file, we can now use the `read_tag` function to load a specific tag by index from the module file. This populates the `data_stream` and `tag_info` properties in a module entry that we can use later.
 
 The `read_tag_from_id` function is also available to load a tag by its global ID, returning the index in which it was found in the module file.
 
 ```rust
-use infinite_rs::ModuleFile;
-use anyhow::Result;
+use infinite_rs::{ModuleFile, Result};
 
 fn load_tags() -> Result<()> {
     // Create new instance of a Module file.
@@ -57,7 +46,7 @@ fn load_tags() -> Result<()> {
 }
 ```
 
-### Creating a custom structure and reading it
+## Creating a custom structure and reading it
 `infinite-rs` also allows you to read data directly into structures, using the `read_metadata` function. This functionality requires the `derive` feature.
 
 ```rust
@@ -92,4 +81,13 @@ fn load_tags() -> Result<()> {
     Ok(())
 }
 ```
-```
+*/
+
+pub mod common;
+pub mod module;
+pub mod tag;
+
+#[doc(inline)]
+pub use crate::common::errors::Result;
+#[doc(inline)]
+pub use crate::{module::loader::ModuleFile, tag::loader::TagFile};

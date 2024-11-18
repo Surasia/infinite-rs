@@ -1,5 +1,12 @@
 # infinite-rs Changelog
 
+## 0.4.0 - 2024-11-18
+- Kraken decompressor can now build and link on linux
+- Added support for loading custom tag structures
+- Added new derive macro crate to generate tag structures
+- Field blocks can now be read properly
+- Miscellanous changes and improvements.
+
 ## 0.3.1 - 2024-10-21
 - Resource tags can now be read using ModuleFile::read_tag.
 

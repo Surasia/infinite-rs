@@ -1,0 +1,38 @@
+[package]
+name = "infinite-rs"
+description = "Simple and fast deserialization library for Halo Infinite."
+version = "0.4.0"
+authors.workspace = true
+documentation.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme.workspace = true
+license.workspace = true
+edition.workspace = true
+
+[package.metadata.docs.rs]
+all_features = true
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+rustdoc-args = ["--document-private-items", "--generate-link-to-definition"]
+
+[dependencies]
+bitflags = "2.6.0"
+byteorder = "1.5.0"
+num_enum = "0.7.3"
+thiserror = "2.0.3"
+infinite-rs-derive = { path = "../infinite-rs-derive", optional = true }
+
+[dev-dependencies]
+walkdir = "2.5.0"
+infinite-rs-derive = { path = "../infinite-rs-derive" }
+
+[build-dependencies.cmake]
+version = "0.1.51"
+
+[features]
+derive = ["infinite-rs-derive"]
+
+[[example]]
+name = "load_all_modules"
+doc-scrape-examples = true
