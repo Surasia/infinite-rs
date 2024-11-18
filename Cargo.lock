@@ -131,6 +131,7 @@ name = "infinite-rs-derive"
 version = "0.1.0"
 dependencies = [
  "deluxe",
+ "infinite-rs",
  "proc-macro2",
  "quote",
  "syn",
