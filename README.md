@@ -13,8 +13,6 @@ This crate currently is in early-development. Please let me know via Github issu
 
 ## Usage/Example
 
-Simple and fast deserialization library for Halo Infinite.
-
 ### Getting Started: Loading a Module file
 Modules are the file format that store "tags" in Halo Infinite. These files are used to store all the assets in the game, including models, textures, metadata, and more. `infinite-rs` provides a simple interface to load these tags, starting with loading the module files themselves.
 
