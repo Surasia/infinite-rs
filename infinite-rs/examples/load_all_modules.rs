@@ -21,7 +21,7 @@ fn load_modules(deploy_path: String) -> infinite_rs::Result<Vec<ModuleFile>> {
                     }
                     Err(err) => {
                         println!("Failed on file: {}", file_path);
-                        return Err(err.into());
+                        return Err(err);
                     }
                 };
             }
