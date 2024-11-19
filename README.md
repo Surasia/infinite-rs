@@ -125,7 +125,7 @@ fn load_tags() -> Result<()> {
 - [libinfinite](https://github.com/Coreforge/libInfinite) by Coreforge, which this project is mostly based on.
 - [Reclaimer](https://github.com/Gravemind2401/Reclaimer) by Gravemind2401, which helped me get familiar with Blam file formats.
 - [AusarDocs](https://github.com/ElDewrito/AusarDocs) by Shockfire, a very useful resource on Ausar/Slipspace file formats.
-- [Kraken](https://github.com/WolvenKit/kraken) by WolvenKit team, a re-implementation of Oodle Kraken, removing the need for any binary blobs being required for decompression.
+- [Kraken](https://github.com/WolvenKit/kraken) by Wolvenkit team, a re-implementation of Oodle Kraken, removing the need for any binary blobs being required for decompression.
 - [TagFramework](https://github.com/Codename-Atriox/TagFramework) by Codename Atriox, which was a common reference point for Slipspace internals.
 - [red4lib](https://github.com/rfuzzo/red4lib) by rfuzzo, acting as the main inspiration for this project.
 - [HIRT](https://github.com/urium1186/HIRT) by urium1186, which was very useful in debugging and verifying output from this project.
