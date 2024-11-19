@@ -131,13 +131,13 @@ where
         Self: Sized,
         Vec<T>: FromIterator<T>,
     {
-        let enumerables = (0..count)
-            .map(|_| -> Result<T> {
-                let mut enumerable = T::default();
-                enumerable.read(self)?;
-                Ok(enumerable)
-            })
-            .collect::<Result<Vec<_>>>()?;
+        let mut enumerables = vec![];
+        enumerables.reserve_exact(usize::try_from(count)? + 1);
+        for _ in 0..count {
+            let mut enumerable = T::default();
+            enumerable.read(self)?;
+            enumerables.push(enumerable);
+        }
         Ok(enumerables)
     }
 }

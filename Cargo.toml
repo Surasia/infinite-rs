@@ -13,5 +13,6 @@ license = "Unlicense OR MIT"
 edition = "2021"
 
 [profile.release]
-lto = true
+lto = "fat"
 incremental = true
+debug = true
