@@ -23,7 +23,7 @@ pub struct ModuleFile {
     /// Metadata regarding compression and layout of files (tags).
     pub files: Vec<ModuleFileEntry>,
     /// Indices of resource files present in the module.
-    resources: Vec<u32>,
+    resource_indices: Vec<u32>,
     /// Uncompressed/compressed blocks making up a file.
     blocks: Vec<ModuleBlockEntry>,
     /// Offset in `BufReader` where file data starts.
@@ -32,8 +32,6 @@ pub struct ModuleFile {
     module_file: Option<BufReader<File>>,
     /// Reference to HD1 buffer if it exists.
     hd1_file: Option<BufReader<File>>,
-    /// Path stored to be reused when reading HD1 modules.
-    pub file_path: String,
 }
 
 impl ModuleFile {
@@ -47,26 +45,22 @@ impl ModuleFile {
     ///
     /// # Arguments
     ///
-    /// * `file_path` - A string slice that holds the path to the module file.
+    /// * `file_path` - A `Path` reference that holds the path to the module file.
     ///
     /// # Returns
     ///
     /// Returns `Ok(())` if the read operation is successful, or an `Error` containing
     /// the I/O error if any reading operation fails.
-    pub fn read(&mut self, file_path: String) -> Result<()> {
-        if file_path.contains("deploy/ds") {
-            println!("WARNING: Loading {{ds}} module, might contain stub tags!");
-        }
-        let file = File::open(Path::new(&file_path))?;
-        self.file_path = file_path;
+    pub fn read<T: AsRef<Path>>(&mut self, file_path: T) -> Result<()> {
+        let file = File::open(&file_path)?;
         let mut reader = BufReader::new(file);
 
         self.header.read(&mut reader)?;
-        self.open_hd1()?;
+        self.open_hd1(file_path)?;
 
         self.files =
             reader.read_enumerable::<ModuleFileEntry>(u64::from(self.header.file_count))?;
-        self.resources = (0..self.header.resource_count)
+        self.resource_indices = (0..self.header.resource_count)
             .map(|_| -> Result<u32> { Ok(reader.read_u32::<LE>()?) })
             .collect::<Result<Vec<_>>>()?;
         self.blocks =
@@ -80,10 +74,9 @@ impl ModuleFile {
         Ok(())
     }
 
-    fn open_hd1(&mut self) -> Result<()> {
+    fn open_hd1<T: AsRef<Path>>(&mut self, file_path: T) -> Result<()> {
         if self.header.hd1_delta != 0 {
-            let filepath = format!("{}_hd1", &self.file_path);
-            let hd1 = Path::new(&filepath);
+            let hd1 = file_path.as_ref().join("_hd1");
             if hd1.exists() {
                 let file = File::open(hd1)?;
                 self.hd1_file = Some(BufReader::new(file));
@@ -170,7 +163,7 @@ impl ModuleFile {
         let entry = &self.files[index as usize];
         let mut resources = Vec::with_capacity(entry.resource_count as usize);
         for i in entry.resource_index..entry.resource_index + entry.resource_count {
-            resources.push(&self.files[self.resources[i as usize] as usize]);
+            resources.push(&self.files[self.resource_indices[i as usize] as usize]);
         }
         Ok(resources)
     }
