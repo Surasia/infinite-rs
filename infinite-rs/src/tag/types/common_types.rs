@@ -1176,8 +1176,8 @@ impl FieldTagResource {
 #[derive(Default, Debug)]
 /// "Internal struct" of `AnyTag` field.
 pub struct AnyTagGuts {
-    pub tag_id: FieldLongInteger,
-    pub local_tag_handle: FieldLongInteger,
+    pub tag_id: i32,
+    pub local_tag_handle: i32,
 }
 
 impl AnyTagGuts {
@@ -1185,8 +1185,8 @@ impl AnyTagGuts {
     where
         R: BufRead + Seek,
     {
-        self.tag_id.read(reader)?;
-        self.local_tag_handle.read(reader)?;
+        self.tag_id = reader.read_i32::<LE>()?;
+        self.local_tag_handle = reader.read_i32::<LE>()?;
         Ok(())
     }
 }
@@ -1195,7 +1195,7 @@ impl AnyTagGuts {
 /// `AnyTag` is present in all non-resource tags.
 /// Is used at runtime to calculate locations of tags in memory.
 pub struct AnyTag {
-    pub vtable_space: FieldInt64Integer,
+    pub vtable_space: u64,
     pub internal_struct: AnyTagGuts,
 }
 
@@ -1204,7 +1204,7 @@ impl AnyTag {
     where
         R: BufRead + Seek,
     {
-        self.vtable_space.read(reader)?;
+        self.vtable_space = reader.read_u64::<LE>()?;
         self.internal_struct.read(reader)?;
         Ok(())
     }
