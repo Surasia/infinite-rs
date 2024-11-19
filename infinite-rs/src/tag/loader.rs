@@ -22,9 +22,9 @@ pub struct TagFile {
     /// Tags that are referenced by this tag and that need to be lazy loaded.
     pub dependencies: Vec<TagDependency>,
     /// Blocks making up the entire tag (Internal and External)
-    pub datablock: Vec<TagDataBlock>,
+    pub datablock_definitions: Vec<TagDataBlock>,
     /// Internal structure units of the tag.
-    pub structs: Vec<TagStruct>,
+    pub struct_definitions: Vec<TagStruct>,
     /// References to external data from the tag.
     pub data_references: Vec<TagDataReference>,
     /// Tags that are referenced by this tag inside the module.
@@ -53,10 +53,10 @@ impl Readable for TagFile {
         self.dependencies =
             reader.read_enumerable::<TagDependency>(u64::from(self.header.dependency_count))?;
 
-        self.datablock =
+        self.datablock_definitions =
             reader.read_enumerable::<TagDataBlock>(u64::from(self.header.datablock_count))?;
 
-        self.structs =
+        self.struct_definitions =
             reader.read_enumerable::<TagStruct>(u64::from(self.header.tagstruct_count))?;
 
         self.data_references = reader

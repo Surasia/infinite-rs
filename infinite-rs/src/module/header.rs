@@ -7,6 +7,8 @@ use crate::common::errors::{Error, ModuleError};
 use crate::Result;
 
 const HEADER_MAGIC: u32 = 0x6468_6F6D; // "mohd"
+const HEADER_VERSION: i32 = 0x34; // 52
+
 #[derive(Default, Debug)]
 /// Module Header structure containing info on the layout of the module file.
 /// Version 53+.
@@ -70,7 +72,7 @@ impl ModuleHeader {
         }
 
         self.version = reader.read_i32::<LE>()?;
-        if self.version <= 0x34 {
+        if self.version <= HEADER_VERSION {
             return Err(Error::ModuleError(ModuleError::IncorrectVersion(
                 self.version,
             )));

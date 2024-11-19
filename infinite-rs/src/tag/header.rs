@@ -10,6 +10,7 @@ use crate::common::{
 use crate::Result;
 
 const HEADER_MAGIC: u32 = 0x6873_6375; // "ucsh"
+const HEADER_VERSION: i32 = 27;
 
 #[derive(Default, Debug)]
 /// Tag Header structure containing info on the layout of the tag file.
@@ -85,7 +86,7 @@ impl TagHeader {
         }
 
         self.version = reader.read_i32::<LE>()?;
-        if self.version != 27 {
+        if self.version != HEADER_VERSION {
             return Err(Error::TagError(TagError::IncorrectVersion(self.version)));
         }
 

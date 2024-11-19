@@ -13,8 +13,8 @@ fn load_modules(deploy_path: String) -> infinite_rs::Result<Vec<ModuleFile>> {
         if entry.file_type().is_file() {
             let file_path = entry.path().to_str().unwrap();
             if file_path.ends_with(".module") {
-                let mut module = ModuleFile::default();
-                match module.read(String::from(file_path)) {
+                let mut module = ModuleFile::new();
+                match module.read(file_path) {
                     Ok(_) => {
                         modules.push(module);
                         println!("Read module: {}", file_path);

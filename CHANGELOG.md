@@ -1,5 +1,12 @@
 # infinite-rs Changelog
 
+## 0.4.2 - 2024-11-19
+-  `module.read()` now supports any `AsRef<Path>` as a filepath argument
+- The `datablock` and `structs` fields in `TagFile` have been renamed to `datablock_definitions` and `struct_definitions`.
+- In `ModuleFile`, the `file_path` field has been removed, and `resources` renamed to `resource_indices`.
+- Warning about `ds` modules has been removed.
+- `AnyTag` now reads its contents directly
+
 ## 0.4.1 - 2024-11-19
 - Fixed Kraken decompressor not working on windows
 - Added new error types for type conversions
