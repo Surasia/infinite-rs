@@ -1,5 +1,10 @@
 # infinite-rs Changelog
 
+## 0.4.1 - 2024-11-19
+- Fixed Kraken decompressor not working on windows
+- Added new error types for type conversions
+- Added github CI.
+
 ## 0.4.0 - 2024-11-18
 - Kraken decompressor can now build and link on linux
 - Added support for loading custom tag structures
