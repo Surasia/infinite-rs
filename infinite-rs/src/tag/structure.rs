@@ -4,6 +4,7 @@ use byteorder::{ReadBytesExt, LE};
 use num_enum::TryFromPrimitive;
 use std::io::BufRead;
 
+use crate::common::errors::{Error, TagError};
 use crate::common::extensions::Readable;
 use crate::Result;
 
@@ -50,7 +51,8 @@ impl Readable for TagStruct {
         R: BufRead,
     {
         self.guid = reader.read_u128::<LE>()?;
-        self.struct_type = TagStructType::try_from(reader.read_u16::<LE>()?).unwrap();
+        self.struct_type = TagStructType::try_from(reader.read_u16::<LE>()?)
+            .map_err(|e| Error::TagError(TagError::InvalidTagStruct(e)))?;
         self.unknown = reader.read_u16::<LE>()?;
         self.target_index = reader.read_i32::<LE>()?;
         self.field_block = reader.read_i32::<LE>()?;

@@ -4,6 +4,7 @@ use byteorder::{ReadBytesExt, LE};
 use num_enum::TryFromPrimitive;
 use std::io::BufRead;
 
+use crate::common::errors::{Error, TagError};
 use crate::common::extensions::Readable;
 use crate::Result;
 
@@ -42,7 +43,8 @@ impl Readable for TagDataBlock {
     {
         self.entry_size = reader.read_u32::<LE>()?;
         self.padding = reader.read_u16::<LE>()?;
-        self.section_type = TagSectionType::try_from(reader.read_u16::<LE>()?).unwrap();
+        self.section_type = TagSectionType::try_from(reader.read_u16::<LE>()?)
+            .map_err(|e| Error::TagError(TagError::InvalidTagSection(e)))?;
         self.offset = reader.read_u64::<LE>()?;
         Ok(())
     }

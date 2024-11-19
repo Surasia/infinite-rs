@@ -30,8 +30,8 @@ impl Readable for TagZoneset {
         self.footer_tags =
             reader.read_enumerable::<TagZonesetTag>(u64::from(self.header.footer_count))?;
         self.parents = (0..self.header.parent_count)
-            .map(|_| reader.read_i32::<LE>().unwrap())
-            .collect();
+            .map(|_| -> Result<i32> { Ok(reader.read_i32::<LE>()?) })
+            .collect::<Result<Vec<i32>>>()?;
         Ok(())
     }
 }

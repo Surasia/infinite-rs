@@ -1,7 +1,10 @@
 //! Common errors used throughout `infinite-rs`.
 
+use num_enum::TryFromPrimitiveError;
 use std::num::TryFromIntError;
 use thiserror::Error;
+
+use crate::tag::{datablock::TagSectionType, structure::TagStructType};
 
 #[derive(Error, Debug)]
 /// Errors that can occur when reading a module file.
@@ -40,6 +43,14 @@ pub enum TagError {
     /// This happens when a user tries to read metadata from a resource that is `RawData`.
     #[error("Does not contain tag info!")]
     NoTagInfo,
+    /// This happens if conversion from integer to `TagSectionType` fails.
+    /// This should never happen, as the `TagSectionType` enum is exhaustive.
+    #[error("Invalid TagStruct type encountered!")]
+    InvalidTagSection(#[from] TryFromPrimitiveError<TagSectionType>),
+    /// This happens if conversion from integer to `TagStructType` fails.
+    /// This should never happen, as the `TagStructType` enum is exhaustive.
+    #[error("Invalid TagStruct type encountered!")]
+    InvalidTagStruct(#[from] TryFromPrimitiveError<TagStructType>),
 }
 
 #[derive(Error, Debug)]
