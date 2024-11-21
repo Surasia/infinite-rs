@@ -19,7 +19,7 @@ use crate::{
 
 #[derive(Default, Debug)]
 /// _0: 32 Byte strings that usually store some sort of short name.
-pub struct FieldString(String);
+pub struct FieldString(pub String);
 
 impl FieldString {
     pub fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
@@ -30,7 +30,7 @@ impl FieldString {
 
 #[derive(Default, Debug)]
 /// _1: 256 byte long string usually used to store paths.
-pub struct FieldLongString(String);
+pub struct FieldLongString(pub String);
 
 impl FieldLongString {
     pub fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
@@ -41,7 +41,7 @@ impl FieldLongString {
 
 #[derive(Default, Debug)]
 /// _2: 32 bit unsigned integer containing a `MurmurHash3_x86_64` 32 bit value.
-pub struct FieldStringId(i32);
+pub struct FieldStringId(pub i32);
 
 impl FieldStringId {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -52,7 +52,7 @@ impl FieldStringId {
 
 #[derive(Default, Debug)]
 /// _4: Signed integer type "char" in C.
-pub struct FieldCharInteger(i8);
+pub struct FieldCharInteger(pub i8);
 
 impl FieldCharInteger {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -63,7 +63,7 @@ impl FieldCharInteger {
 
 #[derive(Default, Debug)]
 /// _5: Signed integer type "short" in C.
-pub struct FieldShortInteger(i16);
+pub struct FieldShortInteger(pub i16);
 
 impl FieldShortInteger {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -74,7 +74,7 @@ impl FieldShortInteger {
 
 #[derive(Default, Debug)]
 /// _6: Signed integer type "long" in C.
-pub struct FieldLongInteger(i32);
+pub struct FieldLongInteger(pub i32);
 
 impl FieldLongInteger {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -85,7 +85,7 @@ impl FieldLongInteger {
 
 #[derive(Default, Debug)]
 /// _7: Signed integer type "__int64 (long long)" in C.
-pub struct FieldInt64Integer(i64);
+pub struct FieldInt64Integer(pub i64);
 
 impl FieldInt64Integer {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -96,7 +96,7 @@ impl FieldInt64Integer {
 
 #[derive(Default, Debug)]
 /// _8: IEE 754 floating point number that stores an angle.
-pub struct FieldAngle(f32);
+pub struct FieldAngle(pub f32);
 
 impl FieldAngle {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -107,7 +107,7 @@ impl FieldAngle {
 
 #[derive(Default, Debug)]
 /// _A: An unsigned "char" value in C used to calculate enums.
-pub struct FieldCharEnum<T: num_enum::TryFromPrimitive<Primitive = u8>>(T);
+pub struct FieldCharEnum<T: num_enum::TryFromPrimitive<Primitive = u8>>(pub T);
 
 impl<T: TryFromPrimitive<Primitive = u8>> FieldCharEnum<T> {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -119,7 +119,7 @@ impl<T: TryFromPrimitive<Primitive = u8>> FieldCharEnum<T> {
 
 #[derive(Default, Debug)]
 /// _B: An unsigned "short" value in C used to calculate enums.
-pub struct FieldShortEnum<T: num_enum::TryFromPrimitive<Primitive = u16>>(T);
+pub struct FieldShortEnum<T: num_enum::TryFromPrimitive<Primitive = u16>>(pub T);
 
 impl<T: TryFromPrimitive<Primitive = u16>> FieldShortEnum<T> {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -131,7 +131,7 @@ impl<T: TryFromPrimitive<Primitive = u16>> FieldShortEnum<T> {
 
 #[derive(Default, Debug)]
 /// _C: An unsigned "long" value in C used to calculate enums.
-pub struct FieldLongEnum<T: num_enum::TryFromPrimitive<Primitive = u32>>(T);
+pub struct FieldLongEnum<T: num_enum::TryFromPrimitive<Primitive = u32>>(pub T);
 
 impl<T: num_enum::TryFromPrimitive<Primitive = u32>> FieldLongEnum<T> {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -143,7 +143,7 @@ impl<T: num_enum::TryFromPrimitive<Primitive = u32>> FieldLongEnum<T> {
 
 #[derive(Default, Debug)]
 /// _D: An unsigned "long" value in C used to calculate bitflags.
-pub struct FieldLongFlags<T: bitflags::Flags<Bits = u32>>(T);
+pub struct FieldLongFlags<T: bitflags::Flags<Bits = u32>>(pub T);
 
 impl<T: bitflags::Flags<Bits = u32>> FieldLongFlags<T> {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -154,7 +154,7 @@ impl<T: bitflags::Flags<Bits = u32>> FieldLongFlags<T> {
 
 #[derive(Default, Debug)]
 /// _E: An unsigned "word (short)" value in C used to calculate bitflags.
-pub struct FieldWordFlags<T: bitflags::Flags<Bits = u16>>(T);
+pub struct FieldWordFlags<T: bitflags::Flags<Bits = u16>>(pub T);
 
 impl<T: bitflags::Flags<Bits = u16>> FieldWordFlags<T> {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -165,7 +165,7 @@ impl<T: bitflags::Flags<Bits = u16>> FieldWordFlags<T> {
 
 #[derive(Default, Debug)]
 /// _F: An unsigned "byte (char)" value in C used to calculate bitflags.
-pub struct FieldByteFlags<T: bitflags::Flags<Bits = u8>>(T);
+pub struct FieldByteFlags<T: bitflags::Flags<Bits = u8>>(pub T);
 
 impl<T: bitflags::Flags<Bits = u8>> FieldByteFlags<T> {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -245,7 +245,7 @@ impl FieldARGBColor {
 
 #[derive(Default, Debug)]
 /// _14: Real number represented as a float.
-pub struct FieldReal(f32);
+pub struct FieldReal(pub f32);
 
 impl FieldReal {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -256,7 +256,7 @@ impl FieldReal {
 
 #[derive(Default, Debug)]
 /// _15: Real "fraction" value represented as a float.
-pub struct FieldRealFraction(f32);
+pub struct FieldRealFraction(pub f32);
 
 impl FieldRealFraction {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -538,8 +538,8 @@ impl FieldRealFractionBounds {
 }
 
 #[derive(Default, Debug)]
-/// _29: Long block flags, stores a 32-bit unsigned integer.
-pub struct FieldLongBlockFlags(u32);
+/// _29: Long block flags, stored a 32-bit unsigned integer.
+pub struct FieldLongBlockFlags(pub u32);
 
 impl FieldLongBlockFlags {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -549,8 +549,8 @@ impl FieldLongBlockFlags {
 }
 
 #[derive(Default, Debug)]
-/// _2A: Word block flags, stores a 32-bit unsigned integer.
-pub struct FieldWordBlockFlags(u32);
+/// _2A: Word block flags, stored a 32-bit unsigned integer.
+pub struct FieldWordBlockFlags(pub u32);
 
 impl FieldWordBlockFlags {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -560,8 +560,8 @@ impl FieldWordBlockFlags {
 }
 
 #[derive(Default, Debug)]
-/// _2B: Byte block flags, stores a 32-bit unsigned integer.
-pub struct FieldByteBlockFlags(u32);
+/// _2B: Byte block flags, stored a 32-bit unsigned integer.
+pub struct FieldByteBlockFlags(pub u32);
 
 impl FieldByteBlockFlags {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -572,7 +572,7 @@ impl FieldByteBlockFlags {
 
 #[derive(Default, Debug)]
 /// _2C: Char block index, stores an 8-bit unsigned integer.
-pub struct FieldCharBlockIndex(u8);
+pub struct FieldCharBlockIndex(pub u8);
 
 impl FieldCharBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -583,7 +583,7 @@ impl FieldCharBlockIndex {
 
 #[derive(Default, Debug)]
 /// _2D: Custom char block index, stores an 8-bit unsigned integer.
-pub struct FieldCustomCharBlockIndex(u8);
+pub struct FieldCustomCharBlockIndex(pub u8);
 
 impl FieldCustomCharBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -594,7 +594,7 @@ impl FieldCustomCharBlockIndex {
 
 #[derive(Default, Debug)]
 /// _2E: Short block index, stores a 16-bit unsigned integer.
-pub struct FieldShortBlockIndex(u16);
+pub struct FieldShortBlockIndex(pub u16);
 
 impl FieldShortBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -605,20 +605,18 @@ impl FieldShortBlockIndex {
 
 #[derive(Default, Debug)]
 /// _2F: Custom short block index, stores a 16-bit unsigned integer.
-pub struct FieldCustomShortBlockIndex {
-    pub index: u16,
-}
+pub struct FieldCustomShortBlockIndex(pub u16);
 
 impl FieldCustomShortBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
-        self.index = reader.read_u16::<LE>()?;
+        self.0 = reader.read_u16::<LE>()?;
         Ok(())
     }
 }
 
 #[derive(Default, Debug)]
 /// _30: Long block index, stores a 32-bit unsigned integer.
-pub struct FieldLongBlockIndex(u32);
+pub struct FieldLongBlockIndex(pub u32);
 
 impl FieldLongBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -629,7 +627,7 @@ impl FieldLongBlockIndex {
 
 #[derive(Default, Debug)]
 /// _31: Custom long block index, stores a 32-bit unsigned integer.
-pub struct FieldCustomLongBlockIndex(u32);
+pub struct FieldCustomLongBlockIndex(pub u32);
 
 impl FieldCustomLongBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -651,7 +649,7 @@ impl FieldPad {
 
 #[derive(Default, Debug)]
 /// _3C: Byte integer field, stores an 8-bit unsigned integer.
-pub struct FieldByteInteger(u8);
+pub struct FieldByteInteger(pub u8);
 
 impl FieldByteInteger {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -662,7 +660,7 @@ impl FieldByteInteger {
 
 #[derive(Default, Debug)]
 /// _3D: Word integer field, stores a 16-bit unsigned integer.
-pub struct FieldWordInteger(u16);
+pub struct FieldWordInteger(pub u16);
 
 impl FieldWordInteger {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -673,7 +671,7 @@ impl FieldWordInteger {
 
 #[derive(Default, Debug)]
 /// _3E: Dword integer field, stores a 32-bit unsigned integer.
-pub struct FieldDwordInteger(u32);
+pub struct FieldDwordInteger(pub u32);
 
 impl FieldDwordInteger {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
@@ -684,7 +682,7 @@ impl FieldDwordInteger {
 
 #[derive(Default, Debug)]
 /// _3F: Qword integer field, stores a 64-bit unsigned integer.
-pub struct FieldQwordInteger(u64);
+pub struct FieldQwordInteger(pub u64);
 
 impl FieldQwordInteger {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
