@@ -16,14 +16,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-
+        profile: ["release", "dev"]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Build
-        run: cargo build --verbose
+        run: cargo build --verbose --profile ${{ matrix.profile }}
       - name: Run tests
-        run: cargo test --verbose
+        run: cargo test --verbose --profile ${{ matrix.profile }}
       - name: Check clippy
         run: cargo clippy --all-targets --all-features

@@ -1,4 +1,3 @@
-#![doc(html_root_url = "https://docs.rs/infinite-rs/latest")]
 #![warn(clippy::pedantic)]
 #![warn(clippy::cargo)]
 #![warn(clippy::complexity)]
