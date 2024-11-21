@@ -5,7 +5,7 @@ use num_enum::TryFromPrimitive;
 use std::io::BufRead;
 
 use crate::common::errors::{Error, TagError};
-use crate::common::extensions::Readable;
+use crate::common::extensions::Enumerable;
 use crate::Result;
 
 #[derive(Default, Debug, TryFromPrimitive)]
@@ -36,11 +36,8 @@ pub struct TagDataBlock {
     pub offset: u64,
 }
 
-impl Readable for TagDataBlock {
-    fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead,
-    {
+impl Enumerable for TagDataBlock {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.entry_size = reader.read_u32::<LE>()?;
         self.padding = reader.read_u16::<LE>()?;
         self.section_type = TagSectionType::try_from(reader.read_u16::<LE>()?)

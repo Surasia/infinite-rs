@@ -1,6 +1,6 @@
 //! Main abstraction file for tags.
 
-use std::io::{BufRead, Seek, SeekFrom};
+use std::io::SeekFrom;
 
 use super::{
     data_reference::TagDataReference,
@@ -11,7 +11,7 @@ use super::{
     structure::TagStruct,
     zoneset::{header::TagZonesetHeader, instance::TagZoneset},
 };
-use crate::common::extensions::{BufReaderExt, Readable};
+use crate::common::extensions::{BufReaderExt, Enumerable};
 use crate::Result;
 
 #[derive(Default, Debug)]
@@ -35,20 +35,17 @@ pub struct TagFile {
     pub(crate) zonesets: Vec<TagZoneset>,
 }
 
-impl Readable for TagFile {
-    /// Reads the tag fike from the given readers implementing `BufRead`, `BufReaderExt` and Seek.
+impl Enumerable for TagFile {
+    /// Reads the tag fike from the given readers implementing [`BufReaderExt`].
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader that implements `BufRead + BufReaderExt + Seek` from which to read the data.
+    /// * `reader` - A mutable reference to a reader that implements [`BufReaderExt`] from which to read the data.
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the header is successfully read, or an `Error` if an I/O error occurs
+    /// Returns `Ok(())` if the header is successfully read, or an [`Error`](`crate::Error`) if an I/O error occurs
     /// or if the header data is invalid.
-    fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead + BufReaderExt + Seek,
-    {
+    fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.header.read(reader)?;
         self.dependencies =
             reader.read_enumerable::<TagDependency>(u64::from(self.header.dependency_count))?;
@@ -73,11 +70,5 @@ impl Readable for TagFile {
         // Ensure that tag data starts where it is supposed to.
         reader.seek(SeekFrom::Start(u64::from(self.header.header_size)))?;
         Ok(())
-    }
-}
-
-impl TagFile {
-    pub(crate) fn new() -> Self {
-        Self::default()
     }
 }

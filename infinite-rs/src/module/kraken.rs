@@ -10,9 +10,9 @@ extern "C" {
     // EXPORT int Kraken_Decompress(const byte *src, size_t src_len, byte *dst, size_t dst_len)
     fn Kraken_Decompress(
         buffer: *const u8,
-        bufferSize: i64,
+        bufferSize: usize,
         outputBuffer: *mut u8,
-        outputBufferSize: i64,
+        outputBufferSize: usize,
     ) -> i32;
 }
 
@@ -30,33 +30,29 @@ extern "C" {
 ///
 /// # Errors
 ///
-/// This function will return a `DecompressionError` if:
-/// - The length of `compressed_buffer` or `size` cannot be converted to `i64`.
-/// - The decompression fails as indicated by a negative result from `Kraken_Decompress`.
+/// This function will return a [`DecompressionError`] if:
+/// - The length of `compressed_buffer` or `size` cannot be converted to [`i64`].
+/// - The decompression fails as indicated by a negative result from [`Kraken_Decompress`].
 /// - The resulting decompressed size exceeds the buffer length.
 ///
 /// # Safety
 ///
-/// This function is unsafe because it calls an external C function `Kraken_Decompress` which operates on raw pointers.
+/// This function is unsafe because it calls an external C function [`Kraken_Decompress`] which operates on raw pointers.
 /// The caller must ensure that the `compressed_buffer` and `output_buffer` are valid and properly sized.
 pub fn decompress(
     compressed_buffer: &[u8],
     output_buffer: &mut Vec<u8>,
     size: usize,
 ) -> Result<i32> {
-    let mut buffer = vec![0; size * 2];
+    let mut buffer = vec![0; size + 8]; // HACK: Ensures that pointer for memory buffer is aligned.
     let result;
-    let compressed_len = i64::try_from(compressed_buffer.len())
-        .map_err(|_| Error::DecompressionError(DecompressionError::BufferSizeOverflow))?;
-    let output_size = i64::try_from(size)
-        .map_err(|_| Error::DecompressionError(DecompressionError::BufferSizeOverflow))?;
 
     unsafe {
         result = Kraken_Decompress(
             compressed_buffer.as_ptr(),
-            compressed_len,
+            compressed_buffer.len(),
             buffer.as_mut_ptr(),
-            output_size,
+            size,
         );
 
         if result < 0 {

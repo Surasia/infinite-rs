@@ -1,8 +1,16 @@
+#![doc(html_root_url = "https://docs.rs/infinite-rs/latest")]
 #![warn(clippy::pedantic)]
-#![allow(clippy::missing_errors_doc)]
+#![warn(clippy::cargo)]
+#![warn(clippy::complexity)]
+#![warn(clippy::absolute_paths)]
 #![warn(clippy::missing_safety_doc)]
-#![allow(clippy::module_name_repetitions)]
 #![warn(clippy::all)]
+#![warn(rustdoc::redundant_explicit_links)]
+#![warn(clippy::needless_doctest_main)]
+#![warn(clippy::default_constructed_unit_structs)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(rustdoc::private_intra_doc_links)]
 /*!
 Simple and fast deserialization library for Halo Infinite.
 
@@ -15,25 +23,22 @@ use infinite_rs::{ModuleFile, Result};
 fn load_modules() -> Result<()> {
     // Create new instance of a Module file.
     // These are the main archive files used in Halo Infinite.
-    let mut module = ModuleFile::new();
-    // Reads to the module file given a file path.
     // Note: the path can be anything that implements AsRef<Path>.
-    module.read("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
+    let mut module = ModuleFile::from_path("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
     Ok(())
 }
 ```
 
 ## Loading a tag file
-After we have loaded a module file, we can now use the `read_tag` function to load a specific tag by index from the module file. This populates the `data_stream` and `tag_info` properties in a module entry that we can use later.
+After we have loaded a module file, we can now use the [`read_tag`](`ModuleFile::read_tag`) function to load a specific tag by index from the module file. This populates the [`data_stream`](`crate::module::file::ModuleFileEntry::data_stream`) and [`tag_info`](`crate::module::file::ModuleFileEntry::tag_info`) properties in a module entry that we can use later.
 
-The `read_tag_from_id` function is also available to load a tag by its global ID, returning the index in which it was found in the module file.
+The [`read_tag_from_id`](`ModuleFile::read_tag_from_id`) function is also available to load a tag by its global ID, returning the index in which it was found in the module file.
 
 ```rust
 use infinite_rs::{ModuleFile, Result};
 
 fn load_tags() -> Result<()> {
-    let mut module = ModuleFile::new();
-    module.read("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
+    let mut module = ModuleFile::from_path("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
 
     // Load a specific tag from the module file.
     let tag_index = 0;
@@ -46,13 +51,12 @@ fn load_tags() -> Result<()> {
 ```
 
 ## Creating a custom structure and reading it
-`infinite-rs` also allows you to read data directly into structures, using the `read_metadata` function. This functionality requires the `derive` feature.
+`infinite-rs` also allows you to read data directly into structures, using the [`read_metadata`](`crate::module::file::ModuleFileEntry::read_metadata) function. This functionality requires the `derive` feature.
 
 ### Defining Structures
-To define a structure that can be read from a tag data stream, you must first derive the `TagStructure` trait. To ensure proper padding and alignment, you can use the `data` attribute to specify the size of the structure in bytes. Each field also must contain a `data` attribute specifying the offset in bytes from the start of the structure.
+To define a structure that can be read from a tag data stream, you must first derive the [`TagStructure`](`crate::module::file::TagStructure) trait. To ensure proper padding and alignment, you can use the `data` attribute to specify the size of the structure in bytes. Each field also must contain a `data` attribute specifying the offset in bytes from the start of the structure.
 
-> [!TIP]
-> Padding between fields are automatically calculated. Any data between two offsets are skipped.
+*Padding between fields is automatically calculated. Any data between two offsets are skipped.*
 
 ```rust
 use infinite_rs_derive::TagStructure;
@@ -89,8 +93,7 @@ struct MaterialTag {
 }
 
 fn load_tags() -> Result<()> {
-    let mut module = ModuleFile::new();
-    module.read("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
+    let mut module = ModuleFile::from_path("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
 
     // We now want to find the material tags in the module file.
     let material_indices = module.files.iter()
@@ -114,6 +117,46 @@ fn load_tags() -> Result<()> {
 }
 ```
 
+### Reading enums and flags
+`infinite-rs` also supports the usage of enums and flags as fields, available on the common types: `FieldCharEnum`, `FieldShortEnum`, `FieldLongEnum`, `FieldLongFlags`, `FieldWordFlags` and `FieldByteFlags`.
+
+For enums, this requires [`TryFromPrimitive`](`num_enum::TryFromPrimitive`) to be implemented.
+For flags, you can use the [`bitflags`] crate.
+
+```rust
+use infinite_rs_derive::TagStructure;
+use infinite_rs::tag::types::common_types::{FieldShortEnum, FieldWordFlags};
+use num_enum::TryFromPrimitive;
+use bitflags::bitflags;
+
+#[derive(Default, Debug, TryFromPrimitive)]
+#[repr(u16)]
+enum Variants {
+    #[default]
+    One,
+    Two,
+    Three
+}
+
+bitflags! {
+    #[derive(Default, Debug)]
+    struct FlagVariants : u16 {
+        const ONE = 0b00;
+        const TWO = 0b01;
+        const THREE = 0b10;
+    }
+}
+
+#[derive(Default, Debug, TagStructure)]
+#[data(size(16))]
+struct ExampleStruct {
+    #[data(offset(0))]
+    variants: FieldShortEnum<Variants>,
+    #[data(offset(2))]
+    variant_flags: FieldWordFlags<FlagVariants>
+}
+```
+
 ## Credits
 - [libinfinite](https://github.com/Coreforge/libInfinite) by Coreforge, which this project is mostly based on.
 - [Reclaimer](https://github.com/Gravemind2401/Reclaimer) by Gravemind2401, which helped me get familiar with Blam file formats.
@@ -130,6 +173,6 @@ pub mod module;
 pub mod tag;
 
 #[doc(inline)]
-pub use crate::common::errors::Result;
+pub use crate::common::errors::{Error, Result};
 #[doc(inline)]
 pub use crate::{module::loader::ModuleFile, tag::loader::TagFile};

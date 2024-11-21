@@ -5,7 +5,7 @@ use num_enum::TryFromPrimitive;
 use std::io::BufRead;
 
 use crate::common::errors::{Error, TagError};
-use crate::common::extensions::Readable;
+use crate::common::extensions::Enumerable;
 use crate::Result;
 
 #[derive(Default, Debug, TryFromPrimitive, PartialEq, Eq)]
@@ -45,11 +45,8 @@ pub struct TagStruct {
     pub field_offset: u32,
 }
 
-impl Readable for TagStruct {
-    fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead,
-    {
+impl Enumerable for TagStruct {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.guid = reader.read_u128::<LE>()?;
         self.struct_type = TagStructType::try_from(reader.read_u16::<LE>()?)
             .map_err(|e| Error::TagError(TagError::InvalidTagStruct(e)))?;

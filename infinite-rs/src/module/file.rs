@@ -6,21 +6,21 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::{
     fs::File,
-    io::{BufRead, BufReader, Cursor, Read, Seek, SeekFrom},
+    io::{BufReader, Cursor, Read, Seek, SeekFrom},
 };
 
 use super::{block::ModuleBlockEntry, kraken::decompress};
-use crate::common::errors::{Error, ModuleError, TagError};
-use crate::common::extensions::Readable;
+use crate::common::errors::{ModuleError, TagError};
+use crate::common::extensions::Enumerable;
 use crate::tag::datablock::TagDataBlock;
 use crate::tag::structure::{TagStruct, TagStructType};
-use crate::Result;
 use crate::{common::extensions::BufReaderExt, tag::loader::TagFile};
+use crate::{Error, Result};
 
 /// Trait for defining tag structures.
 ///
 /// This trait is meant to be used with its derive macro, available in the `derive` feature.
-/// It allows the `read_metadata<T>` function to be called on a `ModuleFileEntry` to read the tag data.
+/// It allows the [`read_metadata<T>`](`ModuleFileEntry::read_metadata`) function to be called on a [`ModuleFileEntry`] to read the tag data.
 ///
 /// Each struct that implements this trait should have the following attributes:
 /// - `#[data(size())]` - The size of the tag structure in bytes.
@@ -57,12 +57,12 @@ pub trait TagStructure {
     /// Returns the size of the tag structure in bytes.
     /// Determined by the [data(size())] attribute.
     fn size(&mut self) -> u64;
-    /// Function that calls all `.read()` functions for each field in the tag structure.
-    fn read<R: BufRead + Seek + BufReaderExt>(&mut self, reader: &mut R) -> Result<()>;
+    /// Function that calls all [`read`](`crate::common::extensions::Enumerable::read`) functions for each field in the tag structure.
+    fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()>;
     /// Returns a map of field names to their offsets in the tag structure.
     fn offsets(&self) -> HashMap<&'static str, u64>;
     /// Function that loads all field blocks for the tag structure, if any.
-    fn load_field_blocks<R: BufRead + Seek + BufReaderExt>(
+    fn load_field_blocks<R: BufReaderExt>(
         &mut self,
         source_index: i32,
         reader: &mut R,
@@ -87,8 +87,8 @@ bitflags! {
 bitflags! {
     #[derive(Debug, Default)]
     /// Flags that determine how a tag should be read.
-    struct FileEntryFlags : u8  {
-        /// If tag is Oodle compressed or not.
+    pub struct FileEntryFlags : u8  {
+        /// If tag is compressed or not.
         const COMPRESSED = 0b0000_0001;
         /// Indicates that tag is made up of "tag blocks" which need to be joined to assemble the
         /// entire file entry.
@@ -102,9 +102,9 @@ bitflags! {
 /// Module file entry structure containing metadata relating to file and required buffer sizes and offsets for the decompressor, as well as global tag ID, resource references and class.
 pub struct ModuleFileEntry {
     /// Unknown, some sort of size?
-    pub(super) unknown: u8,
+    unknown: u8,
     /// Determine how the file should be read.
-    flags: FileEntryFlags,
+    pub flags: FileEntryFlags,
     /// Number of blocks that make up the file.
     block_count: u16,
     /// Index of the first block in the module.
@@ -113,8 +113,8 @@ pub struct ModuleFileEntry {
     pub(super) resource_index: i32,
     /// 4 byte-long string for tag group, stored as big endian. This determines how the rest of the tag is read.
     /// Example:
-    /// * bitm: Bitmap
-    /// * mat: Material
+    /// * `bitm`: Bitmap
+    /// * `mat `: Material
     pub tag_group: String,
     /// Offset of compressed/uncompressed data in from the start of compressed data in the module.
     data_offset: u64,
@@ -163,11 +163,8 @@ pub struct ModuleFileEntry {
     is_loaded: bool,
 }
 
-impl Readable for ModuleFileEntry {
-    fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead + BufReaderExt + Seek,
-    {
+impl Enumerable for ModuleFileEntry {
+    fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.unknown = reader.read_u8()?;
         self.flags = FileEntryFlags::from_bits_truncate(reader.read_u8()?);
         self.block_count = reader.read_u16::<LE>()?;
@@ -202,13 +199,13 @@ impl ModuleFileEntry {
     ///
     /// # Arguments
     ///
-    /// * `reader` -  A mutable reference to a `BufReader<File>` from which to read the data.
+    /// * `reader` -  A mutable reference to a [`BufReader<File>`] from which to read the data.
     /// * `data_offset` - Starting offset in bytes of the data in the file.
     /// * `blocks` - Metadata for data blocks.
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an `Error` containing
+    /// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
     /// the I/O error if any reading operation fails.
     pub(super) fn read_tag(
         &mut self,
@@ -235,7 +232,7 @@ impl ModuleFileEntry {
         self.data_stream = Some(data_stream);
 
         if self.tag_id != -1 {
-            let mut tagfile = TagFile::new();
+            let mut tagfile = TagFile::default();
             if let Some(ref mut stream) = self.data_stream {
                 tagfile.read(stream)?;
             }
@@ -253,8 +250,8 @@ impl ModuleFileEntry {
     ///
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a `BufReader<File>` from which to read the data.
-    /// * `blocks` - A slice of `ModuleBlockEntry` containing metadata about each block.
+    /// * `reader` - A mutable reference to a [`BufReader<File>`] from which to read the data.
+    /// * `blocks` - A slice of [`ModuleBlockEntry`] containing metadata about each block.
     /// * `file_offset` - The offset in the file where the data blocks start.
     /// * `data` - A mutable slice where the (decompressed) data will be stored.
     ///
@@ -288,9 +285,9 @@ impl ModuleFileEntry {
         Ok(())
     }
 
-    /// Reads a specified structure implementing `TagStructure` from the tag data.
+    /// Reads a specified structure implementing [`TagStructure`] from the tag data.
     ///
-    /// This function exhausts the inner `data_stream` buffer to read the contents of the specified
+    /// This function exhausts the inner [`data_stream`](`self.data_stream`) buffer to read the contents of the specified
     /// struct. It first looks for the main struct definition of the file, then gets the referenced
     /// data block and creates a reader for it. The initial contents of the struct are read, and
     /// field block definitions are loaded recursively.
@@ -298,14 +295,14 @@ impl ModuleFileEntry {
     ///
     /// # Arguments
     ///
-    /// * `struct_type` - A mutable reference to the struct implementing `TagStructure` to read the data into.
+    /// * `struct_type` - A mutable reference to the struct implementing [`TagStructure`] to read the data into.
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an `Error` containing
+    /// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
     /// the I/O error if any reading operation fails.
     pub fn read_metadata<T: Default + TagStructure>(&mut self, struct_type: &mut T) -> Result<T> {
-        let mut full_tag = Vec::new();
+        let mut full_tag = Vec::with_capacity(self.total_uncompressed_size as usize);
         self.data_stream
             .as_mut()
             .ok_or(Error::TagError(TagError::NotLoaded))?
@@ -346,13 +343,13 @@ impl ModuleFileEntry {
 ///
 /// # Arguments
 ///
-/// * `reader` - A mutable reference to a `BufReader<File>` from which to read the data.
-/// * `block` - A reference to the `ModuleBlockEntry` containing metadata about the block.
+/// * `reader` - A mutable reference to a [`BufReader<File>`] from which to read the data.
+/// * `block` - A reference to the [`ModuleBlockEntry`] containing metadata about the block.
 /// * `data` - A mutable slice where the uncompressed data will be stored.
 ///
 /// # Returns
 ///
-/// Returns `Ok(())` if the read operation is successful, or an `Error` containing
+/// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
 /// the I/O error if any reading operation fails.
 fn read_uncompressed_block(
     reader: &mut BufReader<File>,
@@ -373,13 +370,13 @@ fn read_uncompressed_block(
 ///
 /// # Arguments
 ///
-/// * `reader` - A mutable reference to a `BufReader<File>` from which to read the data.
-/// * `block` - A reference to the `ModuleBlockEntry` containing metadata about the block.
+/// * `reader` - A mutable reference to a [`BufReader<File>`] from which to read the data.
+/// * `block` - A reference to the [`ModuleBlockEntry`] containing metadata about the block.
 /// * `data` - A mutable slice where the decompressed data will be stored.
 ///
 /// # Returns
 ///
-/// Returns `Ok(())` if the read operation is successful, or an `Error` containing
+/// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
 /// the I/O error if any reading operation fails.
 fn read_compressed_block(
     reader: &mut BufReader<File>,
@@ -408,14 +405,14 @@ fn read_compressed_block(
 ///
 /// # Arguments
 ///
-/// * `reader` - A mutable reference to a `BufReader<File>` from which to read the data.
-/// * `file_entry` - A reference to the `ModuleFileEntry` containing metadata about the file.
+/// * `reader` - A mutable reference to a [`BufReader<File>`] from which to read the data.
+/// * `file_entry` - A reference to the [`ModuleFileEntry`] containing metadata about the file.
 /// * `file_offset` - The offset in the file where the data block starts.
-/// * `data` - A mutable reference to the `Vec<u8>` where the (decompressed) data will be stored.
+/// * `data` - A mutable reference to the [`Vec<u8>`] where the (decompressed) data will be stored.
 ///
 /// # Returns
 ///
-/// Returns `Ok(())` if the read operation is successful, or an `Error` containing
+/// Returns `Ok(())` if the read operation is successful, or an [`Error`]    containing
 /// the I/O error if any reading operation fails.
 fn read_single_block(
     reader: &mut BufReader<File>,

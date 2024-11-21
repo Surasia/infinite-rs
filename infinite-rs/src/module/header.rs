@@ -30,7 +30,7 @@ pub struct ModuleHeader {
     manifest1_count: u32,
     /// Unknown: not present in any modules.
     manifest2_count: u32,
-    /// Index of the first resource entry (`file_count` - `resource_count`).
+    /// Index of the first resource entry ([`file_count`](`self.file_count`) - [`resource_count`](`self.resource_count`])).
     resource_index: i32,
     /// Total size in bytes of the string table.
     strings_size: u32,
@@ -52,11 +52,11 @@ impl ModuleHeader {
     /// Reads the module header from the given buffered reader.
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a `BufReader<File>` from which to read the data.
+    /// * `reader` - A mutable reference to a [`BufReader<File>`] from which to read the data.
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the header is successfully read, or an `Error` if an I/O error occurs
+    /// Returns `Ok(())` if the header is successfully read, or an [`Error`] if an I/O error occurs
     /// or if the header data is invalid.
     ///
     /// # Errors

@@ -3,14 +3,14 @@
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
 
-use crate::common::extensions::Readable;
+use crate::common::extensions::Enumerable;
 use crate::Result;
 
 #[derive(Default, Debug)]
 /// Represents a module block entry containing information related to Kraken compression.
-/// This struct is used to determine how to read bytes in `module_file`.
+/// This struct is used to determine how to read bytes in [`ModuleFileEntry`](`super::file::ModuleFileEntry`).
 pub(super) struct ModuleBlockEntry {
-    /// Offset in bytes of compressed data inside the module (after `file_data_offset` in the module).
+    /// Offset in bytes of compressed data inside the module (after [`file_data_offset`](`super::loader::ModuleFile::file_data_offset`) in the module).
     pub(super) compressed_offset: u32,
     /// Size in bytes of compressed data inside the module.
     pub(super) compressed_size: u32,
@@ -23,7 +23,7 @@ pub(super) struct ModuleBlockEntry {
     pub(super) is_compressed: bool,
 }
 
-impl Readable for ModuleBlockEntry {
+impl Enumerable for ModuleBlockEntry {
     fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.compressed_offset = reader.read_u32::<LE>()?;
         self.compressed_size = reader.read_u32::<LE>()?;
