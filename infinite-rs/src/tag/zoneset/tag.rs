@@ -3,7 +3,7 @@
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
 
-use crate::common::extensions::Readable;
+use crate::common::extensions::Enumerable;
 use crate::Result;
 
 #[derive(Default, Debug)]
@@ -14,11 +14,8 @@ pub(super) struct TagZonesetTag {
     string_id: i32,
 }
 
-impl Readable for TagZonesetTag {
-    fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead,
-    {
+impl Enumerable for TagZonesetTag {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.global_id = reader.read_i32::<LE>()?;
         self.string_id = reader.read_i32::<LE>()?;
         Ok(())

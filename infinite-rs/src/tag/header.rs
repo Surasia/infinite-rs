@@ -3,10 +3,7 @@
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
 
-use crate::common::{
-    errors::{Error, TagError},
-    extensions::BufReaderExt,
-};
+use crate::common::errors::{Error, TagError};
 use crate::Result;
 
 const HEADER_MAGIC: u32 = 0x6873_6375; // "ucsh"
@@ -65,10 +62,10 @@ pub struct TagHeader {
 }
 
 impl TagHeader {
-    /// Reads the tag header from the given readers implementing `BufRead` and `BufReaderExt`.
+    /// Reads the tag header from the given reader implementing [`BufRead`].
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader that implements `BufRead + BufReaderExt` from which to read the data.
+    /// * `reader` - A mutable reference to a reader that implements [`BufRead`] from which to read the data.
     ///
     /// # Returns
     ///
@@ -76,10 +73,7 @@ impl TagHeader {
     /// * The magic string is not "ucsh"
     /// * The version is less than or equal to 17
     /// * Any I/O error occurs while reading
-    pub fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead + BufReaderExt,
-    {
+    pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.magic = reader.read_u32::<LE>()?;
         if self.magic != HEADER_MAGIC {
             return Err(Error::TagError(TagError::IncorrectMagic(self.magic)));

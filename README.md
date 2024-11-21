@@ -20,12 +20,10 @@ Modules are the file format that store "tags" in Halo Infinite. These files are 
 use infinite_rs::{ModuleFile, Result};
 
 fn load_modules() -> Result<()> {
-    // Create new instance of a Module file.
-    // These are the main archive files used in Halo Infinite.
-    let mut module = ModuleFile::new();
     // Reads to the module file given a file path.
+    // These are the main archive files used in Halo Infinite.
     // Note: the path can be anything that implements AsRef<Path>.
-    module.read("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
+    let mut module = ModuleFile::from_path("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
     Ok(())
 }
 ```
@@ -39,8 +37,7 @@ The `read_tag_from_id` function is also available to load a tag by its global ID
 use infinite_rs::{ModuleFile, Result};
 
 fn load_tags() -> Result<()> {
-    let mut module = ModuleFile::new();
-    module.read("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
+    let mut module = ModuleFile::from_path("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
 
     // Load a specific tag from the module file.
     let tag_index = 0;
@@ -96,8 +93,7 @@ struct MaterialTag {
 }
 
 fn load_tags() -> Result<()> {
-    let mut module = ModuleFile::new();
-    module.read("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
+    let mut module = ModuleFile::from_path("C:/XboxGames/Halo Infinite/Content/deploy/any/globals-rtx-new.module")?;
 
     // We now want to find the material tags in the module file.
     let material_indices = module.files.iter()
@@ -118,6 +114,46 @@ fn load_tags() -> Result<()> {
         assert_eq!(module.files[index].tag_id, mat.any_tag.internal_struct.tag_id);
     }
     Ok(())
+}
+```
+
+#### Reading enums and flags
+`infinite-rs` also supports the usage of enums and flags as fields, available on the common types: `FieldCharEnum`, `FieldShortEnum`, `FieldLongEnum`, `FieldLongFlags`, `FieldWordFlags` and `FieldByteFlags`.
+
+For enums, this requires `TryFromPrimitive` to be implemented.
+For flags, you can use the `bitflags` crate.
+
+```rust
+use infinite_rs_derive::TagStructure;
+use infinite_rs::tag::types::common_types::{FieldShortEnum, FieldWordFlags};
+use num_enum::TryFromPrimitive;
+use bitflags::bitflags;
+
+#[derive(Default, Debug, TryFromPrimitive)]
+#[repr(u16)]
+enum Variants {
+    #[default]
+    One,
+    Two,
+    Three
+}
+
+bitflags! {
+    #[derive(Default, Debug)]
+    struct FlagVariants : u16 {
+        const ONE = 0b00;
+        const TWO = 0b01;
+        const THREE = 0b10;
+    }
+}
+
+#[derive(Default, Debug, TagStructure)]
+#[data(size(16))]
+struct ExampleStruct {
+    #[data(offset(0))]
+    variants: FieldShortEnum<Variants>,
+    #[data(offset(2))]
+    variant_flags: FieldWordFlags<FlagVariants>
 }
 ```
 

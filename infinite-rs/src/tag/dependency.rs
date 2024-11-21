@@ -1,9 +1,8 @@
 //! Tag dependency structure containing info on lazy-loaded tags.
 
 use byteorder::{ReadBytesExt, LE};
-use std::io::BufRead;
 
-use crate::common::extensions::{BufReaderExt, Readable};
+use crate::common::extensions::{BufReaderExt, Enumerable};
 use crate::Result;
 
 #[derive(Default, Debug)]
@@ -11,8 +10,8 @@ use crate::Result;
 pub struct TagDependency {
     /// 4 byte-long string for tag group, stored as big endian
     /// Example:
-    /// * bitm: Bitmap
-    /// * mat: Material
+    /// * `bitm`: Bitmap
+    /// * `mat `: Material
     pub tag_group: String,
     /// Offset in global string table where the name of the tag is stored.
     /// This is no longer valid as of module version 52
@@ -27,11 +26,8 @@ pub struct TagDependency {
     pub parent_index: i32,
 }
 
-impl Readable for TagDependency {
-    fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead + BufReaderExt,
-    {
+impl Enumerable for TagDependency {
+    fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.tag_group = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
         self.name_offset = reader.read_u32::<LE>()?;
         self.asset_id = reader.read_u64::<LE>()?;

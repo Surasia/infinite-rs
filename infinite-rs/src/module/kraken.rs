@@ -30,14 +30,14 @@ extern "C" {
 ///
 /// # Errors
 ///
-/// This function will return a `DecompressionError` if:
-/// - The length of `compressed_buffer` or `size` cannot be converted to `i64`.
-/// - The decompression fails as indicated by a negative result from `Kraken_Decompress`.
+/// This function will return a [`DecompressionError`] if:
+/// - The length of `compressed_buffer` or `size` cannot be converted to [`i64`].
+/// - The decompression fails as indicated by a negative result from [`Kraken_Decompress`].
 /// - The resulting decompressed size exceeds the buffer length.
 ///
 /// # Safety
 ///
-/// This function is unsafe because it calls an external C function `Kraken_Decompress` which operates on raw pointers.
+/// This function is unsafe because it calls an external C function [`Kraken_Decompress`] which operates on raw pointers.
 /// The caller must ensure that the `compressed_buffer` and `output_buffer` are valid and properly sized.
 pub fn decompress(
     compressed_buffer: &[u8],

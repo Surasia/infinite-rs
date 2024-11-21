@@ -26,7 +26,7 @@ pub struct ModuleFile {
     resource_indices: Vec<u32>,
     /// Uncompressed/compressed blocks making up a file.
     blocks: Vec<ModuleBlockEntry>,
-    /// Offset in `BufReader` where file data starts.
+    /// Offset in [`BufReader`] where file data starts.
     file_data_offset: u64,
     /// Reference to the module file buffer.
     module_file: Option<BufReader<File>>,
@@ -35,21 +35,29 @@ pub struct ModuleFile {
 }
 
 impl ModuleFile {
+    /// Instantiates a default [`ModuleFile`] object.
     #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
+
+    pub fn from_path<T: AsRef<Path>>(file_path: T) -> Result<Self> {
+        let mut module = Self::default();
+        module.read(file_path)?;
+        Ok(module)
+    }
+
     /// Reads the module file from the given file path.
     /// This function reads the entire structure of the module file.
     /// It also calculates and stores important offsets within the file.
     ///
     /// # Arguments
     ///
-    /// * `file_path` - A `Path` reference that holds the path to the module file.
+    /// * `file_path` - A reference to a type that implements [`Path`] that holds the path to the module file.
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an `Error` containing
+    /// Returns `Ok(())` if the read operation is successful, or an [`Error`](`crate::Error`) containing
     /// the I/O error if any reading operation fails.
     pub fn read<T: AsRef<Path>>(&mut self, file_path: T) -> Result<()> {
         let file = File::open(&file_path)?;
@@ -88,18 +96,18 @@ impl ModuleFile {
     /// Reads a specific tag from the module file.
     ///
     /// This function reads a specific tag from the module file based on the provided index.
-    /// It checks if the tag is not a resource tag (indicated by a `tag_id` of -1) and then reads
+    /// It checks if the tag is not a resource tag (indicated by a [`tag_id`](`super::file::ModuleFileEntry::tag_id`) of -1) and then reads
     /// the tag data from the module file. It also utilizes the HD1 stream if the file entry has
     /// the flag set for it and the stream is loaded.
     ///
     /// # Arguments
     ///
     /// * `index` - The index of the file entry to read the tag from. This index corresponds to
-    ///             the position of the file entry in the `files` vector.
+    ///             the position of the file entry in the [`files`](`self.files`) vector.
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an `Error` containing
+    /// Returns `Ok(())` if the read operation is successful, or an [`Error`](`crate::Error`) containing
     /// the I/O error if any reading operation fails.
     pub fn read_tag(&mut self, index: u32) -> Result<()> {
         let file = &mut self.files[index as usize];
@@ -119,8 +127,8 @@ impl ModuleFile {
 
     /// Searches for the index of the tag given the `global_id`.
     ///
-    /// This function searches for the index of a tag in the `files` vector using the provided
-    /// `global_id`. If the tag is found, it reads the tag using the `read_tag` function and
+    /// This function searches for the index of a tag in the [`files`](`self.files`) vector using the provided
+    /// `global_id`. If the tag is found, it reads the tag using the [`read_tag`](`self.read_tag`) function and
     /// stores it in the index.
     ///
     /// # Arguments
@@ -131,7 +139,7 @@ impl ModuleFile {
     /// # Returns
     ///
     /// Returns the index of the file if successful, wrapped in `Some(usize)`. If the tag is not
-    /// found, it returns `None`. Any I/O error encountered during the operation is also returned
+    /// found, it returns [`None`]. Any I/O error encountered during the operation is also returned
     /// if it occurs.
     pub fn read_tag_from_id(&mut self, global_id: i32) -> Result<Option<usize>> {
         if let Some(index) = self.files.iter().position(|file| file.tag_id == global_id) {
@@ -146,7 +154,7 @@ impl ModuleFile {
     ///
     /// This function reads the resources referenced by a specific module entry. It retrieves
     /// the resources based on the provided index and returns them as a vector of references
-    /// to `ModuleFileEntry`.
+    /// to [`ModuleFileEntry`].
     ///
     /// # Arguments
     ///
@@ -156,8 +164,8 @@ impl ModuleFile {
     /// # Returns
     ///
     /// Returns `Ok(Vec<&ModuleFileEntry>)` if the read operation is successful, containing a
-    /// vector of references to `ModuleFileEntry`. If the requested resource wasn't found in
-    /// the module, an `anyhow::Error` is returned.
+    /// vector of references to [`ModuleFileEntry`]. If the requested resource wasn't found in
+    /// the module, an [`Error`](`crate::Error`) is returned.
     #[allow(clippy::cast_sign_loss)]
     pub fn read_resources(&mut self, index: u32) -> Result<Vec<&ModuleFileEntry>> {
         let entry = &self.files[index as usize];

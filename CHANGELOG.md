@@ -1,5 +1,18 @@
 # infinite-rs Changelog
 
+## 0.5.0 - 2024-11-21
+- Many documentation items have been improved and inner links added
+- Internal: `Readable` has been renamed to `Enumerable`
+- Internal: Removed unnecessary trait bounds
+- A `ModuleFile` can now be instantiated using `from_path`
+- `Error` is now a crate-level export.
+- Added support for enums and bitflags for common types
+- Removed unused common types
+- Many primitive common types now are tuple-like structs
+- Reduced allocations with `read_enumerables` and Kraken decompressor
+- Kraken decompressor has been vendored, now does not include large `oodle.txt` file.
+- Updated dependencies.
+
 ## 0.4.2 - 2024-11-19
 -  `module.read()` now supports any `AsRef<Path>` as a filepath argument
 - The `datablock` and `structs` fields in `TagFile` have been renamed to `datablock_definitions` and `struct_definitions`.

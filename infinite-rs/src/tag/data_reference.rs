@@ -3,7 +3,7 @@
 use byteorder::{ReadBytesExt, LE};
 use std::io::BufRead;
 
-use crate::common::extensions::Readable;
+use crate::common::extensions::Enumerable;
 use crate::Result;
 
 #[derive(Default, Debug)]
@@ -22,11 +22,8 @@ pub struct TagDataReference {
     pub field_offset: u32,
 }
 
-impl Readable for TagDataReference {
-    fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead,
-    {
+impl Enumerable for TagDataReference {
+    fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.parent_struct_index = reader.read_i32::<LE>()?;
         self.unknown = reader.read_i32::<LE>()?;
         self.target_index = reader.read_i32::<LE>()?;

@@ -90,7 +90,7 @@ fn tag_structure_derive2(
             fn size(&mut self) -> u64 {
                 #size
             }
-            fn read<R: std::io::BufRead + std::io::Seek + infinite_rs::common::extensions::BufReaderExt>(&mut self, reader: &mut R) -> infinite_rs::Result<()> {
+            fn read<R: infinite_rs::common::extensions::BufReaderExt>(&mut self, reader: &mut R) -> infinite_rs::Result<()> {
                 let main_offset = reader.stream_position()?;
                 #(#field_reads)*
                 Ok(())

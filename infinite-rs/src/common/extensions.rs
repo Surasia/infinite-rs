@@ -1,57 +1,54 @@
-//! Extensions to `BufReader`.
+//! Extensions to [`BufRead`] for reading fixed-length strings and enumerable types.
 //!
-//! Implements `read_fixed_string` and `read_enumerable` that are not present in the regular `BufReader`.
-//! * `read_fixed_string:` Given a buffer and size, reads characters and collects them into a `String` and returns it.
-//! * `read_enumerable:` Reads a type that implements the `Readable` trait, which reads the type `count` times, accumulating the results into a `Vec` of the type. The type to read must be specified as a generic.
+//! This module provides two main extensions to the standard [`BufRead`]:
 //!
-//! These functions are implemented as traits in generics. Requires `<Read + Seek>` to be satisfied.
+//! * [`read_fixed_string`](`BufReaderExt::read_fixed_string`): Reads a fixed number of bytes and converts them to a UTF-8 string.
+//!   Special handling is included for sequences of `0xFF` bytes which are treated as empty strings.
+//!
+//! * [`read_enumerable`](`BufReaderExt::read_enumerable`): Generic method for reading a sequence of items that implement the
+//!   [`Enumerable`] trait. Reads the specified type `count` times and collects the results into a [`Vec`].
+//!
+//! These extensions are implemented as traits and require the reader to implement both
+//! [`Read`] and [`Seek`] traits.
 //!
 
 use std::io::{BufRead, BufReader, Read, Seek};
 
 use crate::Result;
 
-/// `Readable` trait that ensures a `read` method is declared.
-pub trait Readable {
-    /// Reads data from the given reader and processes it.
+/// Trait for types that can be read sequentially from a buffered reader.
+///
+/// Types implementing this trait can be read using the [`read_enumerable`](`BufReaderExt::read_enumerable`) method
+/// from [`BufReaderExt`].
+pub trait Enumerable {
+    /// Reads data from the given reader and updates the implementing type.
     ///
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to an object that implements `BufRead`, `BufReaderExt`, and `Seek`.
+    /// * `reader` - A mutable reference to any type that implements `BufReaderExt`
     ///
     /// # Returns
     ///
-    /// Returns a `Result<(), Error>` indicating the success or failure of the read operation.
-    ///
-    /// # Errors
-    ///
-    /// Returns an `Err` containing the error if the read operation fails.
-    fn read<R>(&mut self, reader: &mut R) -> Result<()>
-    where
-        R: BufRead + BufReaderExt + Seek;
+    /// * `Ok(())` - If the read operation was successful
+    /// * `Err(Error)` - If an error occurred during reading
+    fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()>;
 }
 
-/// Extension trait for `BufReader` to add custom reading methods.
-pub trait BufReaderExt: BufRead
-where
-    Self: Seek,
-{
+/// Extension trait for [`BufRead`] to add custom reading methods.
+pub trait BufReaderExt: BufRead + Seek {
     /// Reads a fixed-length UTF-8 encoded string from the reader.
     ///
-    /// This function reads exactly `length` bytes into a UTF-8 string and trims any null bytes found at the end of the string.
+    /// This function reads exactly `length` bytes and converts them to a String.
+    /// If the bytes read are all 0xFF, an empty string is returned.
     ///
     /// # Arguments
     ///
-    /// * `length` - The number of bytes to read.
+    /// * `length` - The exact number of bytes to read
     ///
     /// # Returns
     ///
-    /// Returns a `Result<String, Error>` containing the read string.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Ok(String)` if the read operation is successful, or an `Err` containing
-    /// the I/O error if any reading operation fails.
+    /// * `Ok(String)` - The UTF-8 string read from the buffer
+    /// * `Err(Error)` - If reading fails or the bytes are not valid UTF-8
     ///
     /// # Examples
     ///
@@ -78,28 +75,29 @@ where
         Ok(string)
     }
 
-    /// Reads an enumerable type, accumulating the results into a vector of the same type.
+    /// Reads multiple instances of an enumerable type into a vector.
     ///
-    /// This function reads a type implementing the `Readable` trait `count` times.
+    /// Creates a vector of type T by reading the type `count` times from the buffer.
+    /// Type T must implement both [`Default`] and [`Enumerable`]    traits.
+    ///
+    /// # Type Parameters
+    ///
+    /// * `T` - The type to read, must implement `Default + Enumerable`
     ///
     /// # Arguments
     ///
-    /// * `count` - The number of times to read the specified type.
+    /// * `count` - Number of instances to read
     ///
     /// # Returns
     ///
-    /// Returns a `Result<Vec<T>, Error>` containing the accumulated results.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Ok(Vec<T>)` if the read operation is successful, or an `Err` containing
-    /// the I/O error if any reading operation fails.
+    /// * `Ok(Vec<T>)` - Vector containing the read instances
+    /// * `Err(Error)` - If any read operation fails
     ///
     /// # Examples
     ///
     /// ```
-    /// use std::io::{Cursor, BufReader, BufRead, Seek};
-    /// use infinite_rs::common::extensions::{BufReaderExt, Readable};
+    /// use std::io::{Cursor, BufReader,};
+    /// use infinite_rs::common::extensions::{BufReaderExt, Enumerable};
     /// use infinite_rs::common::errors::Error;
     /// use byteorder::{ReadBytesExt, LE};
     ///
@@ -108,11 +106,8 @@ where
     ///     value: u32,
     /// }
     ///
-    /// impl Readable for TestType {
-    ///     fn read<R>(&mut self, reader: &mut R) -> Result<(), Error>
-    ///     where
-    ///         R: BufRead + BufReaderExt + Seek,
-    ///     {
+    /// impl Enumerable for TestType {
+    ///     fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<(), Error> {
     ///         self.value = reader.read_u32::<LE>()?;
     ///         Ok(())
     ///     }
@@ -126,7 +121,7 @@ where
     /// assert_eq!(enumerables[1].value, 2);
     /// assert_eq!(enumerables[2].value, 3);
     /// ```
-    fn read_enumerable<T: Default + Readable>(&mut self, count: u64) -> Result<Vec<T>>
+    fn read_enumerable<T: Default + Enumerable>(&mut self, count: u64) -> Result<Vec<T>>
     where
         Self: Sized,
         Vec<T>: FromIterator<T>,
@@ -150,7 +145,8 @@ mod tests {
     use std::io::Cursor;
 
     #[test]
-    /// Some strings such as the `tag_group` of the first file entry in the modules are empty (0xFFFFFFFF), which should be handled to return an empty string.
+    /// Verifies that reading 0xFFFFFFFF returns an empty string, which is used
+    /// to handle empty `tag_group` entries in module files.
     fn test_read_fixed_string_empty() {
         let data = [255, 255, 255, 255];
         let mut reader = BufReader::new(Cursor::new(&data));

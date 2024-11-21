@@ -1,7 +1,10 @@
 //! Common errors used throughout `infinite-rs`.
 
 use num_enum::TryFromPrimitiveError;
+use std::io::Error as StdIoError;
 use std::num::TryFromIntError;
+use std::result::Result as StdResult;
+use std::string::FromUtf8Error;
 use thiserror::Error;
 
 use crate::tag::{datablock::TagSectionType, structure::TagStructType};
@@ -9,15 +12,15 @@ use crate::tag::{datablock::TagSectionType, structure::TagStructType};
 #[derive(Error, Debug)]
 /// Errors that can occur when reading a module file.
 pub enum ModuleError {
-    /// Incorrect magic found in the module file, when not "ucsh".
+    /// Incorrect magic number found in the module file header. Expected magic number is "ucsh" (0x64686F6D).
     #[error("Incorrect magic found! Expected '0x64686F6D', found {0:#X}!")]
     IncorrectMagic(u32),
-    /// Incorrect version found in the module file, when not 53.
-    /// Module version 53 is the only fully supported module version, however others should also work.
+    /// Incorrect version number found in the module file header. Expected version is 53.
+    /// While version 53 is the only fully supported version, other versions may also work.
     #[error("Incorrect version found! Expected '53', found {0}!")]
     IncorrectVersion(i32),
-    /// This is not supposed to happen, however if it does, it means that the module file is corrupted.
-    /// The error exists to act as an assert.
+    /// Invalid negative block index found in module file, indicating file corruption.
+    /// This error serves as a runtime assert.
     #[error("Module file block index must be non-negative, found {0}")]
     NegativeBlockIndex(i32),
 }
@@ -25,41 +28,45 @@ pub enum ModuleError {
 #[derive(Error, Debug)]
 /// Errors that can occur when reading a tag file.
 pub enum TagError {
-    /// Incorrect magic found in the tag file, when not "mohd".
+    /// Incorrect magic number found in the tag file header. Expected magic number is "mohd" (0x68736375).
     #[error("Incorrect magic found! Expected '0x68736375', found {0:#X}!")]
     IncorrectMagic(u32),
-    /// Incorrect version found in the module file, when not 27.
-    /// Tag version 27 seems to be consistent across all versions of Infinite, also being the same as Halo 5, although they have seperate structures.
+    /// Incorrect version number found in the tag file header. Expected version is 27.
+    /// Version 27 is used across all Infinite versions and matches Halo 5, though with different structures.
     #[error("Incorrect version found! Expected '27', found {0}!")]
     IncorrectVersion(i32),
-    /// This means that the file has not been loaded yet, and no operations can be done on it.
-    /// Basically, if `data_stream` is `None`, this error will be returned.
+    /// File data has not been loaded. Operations require [`data_stream`](`crate::module::file::ModuleFileEntry::data_stream`) to be initialized.
     #[error("Not been loaded yet!")]
     NotLoaded,
-    /// If the struct tagged with "`MainStruct`" is not found in the tag file, this error will be returned.
+    /// Main struct designated by [`MainStruct`](`crate::tag::structure::TagStructType`) was not found in tag file.
     #[error("Main struct not found!")]
     MainStructNotFound,
-    /// If the tag does not contain metadata headers (`tag_info`) this error is returned.
-    /// This happens when a user tries to read metadata from a resource that is `RawData`.
+    /// Tag metadata headers [`tag_info`](`crate::module::file::ModuleFileEntry::tag_info`) are missing.
+    /// This occurs when attempting to read metadata from a [`RawFile`](`crate::module::file::FileEntryFlags::RAW_FILE`).
     #[error("Does not contain tag info!")]
     NoTagInfo,
-    /// This happens if conversion from integer to `TagSectionType` fails.
-    /// This should never happen, as the `TagSectionType` enum is exhaustive.
+    /// Failed to convert integer to [`TagSectionType`].
+    /// This error should not occur as [`TagSectionType`] enum is exhaustive.
     #[error("Invalid TagStruct type encountered!")]
     InvalidTagSection(#[from] TryFromPrimitiveError<TagSectionType>),
-    /// This happens if conversion from integer to `TagStructType` fails.
-    /// This should never happen, as the `TagStructType` enum is exhaustive.
+    /// Failed to convert integer to [`TagStructType`].
+    /// This error should not occur as [`TagStructType`] enum is exhaustive.
     #[error("Invalid TagStruct type encountered!")]
     InvalidTagStruct(#[from] TryFromPrimitiveError<TagStructType>),
+    /// Failed to convert primitive to enum in [`common_types`](`crate::tag::types::common_types`).
+    #[error("Failed to convert primitive to enum")]
+    NumEnumError,
 }
 
 #[derive(Error, Debug)]
 /// Errors that can occur when decompressing data.
 pub enum DecompressionError {
-    /// Occurs when the buffer size is too small to hold the decompressed data, which should never happen at least in Infinite's modules.
+    /// Buffer size is insufficient for decompressed data.
+    /// This should not occur in Infinite module decompression.
     #[error("Buffer size overflow")]
     BufferSizeOverflow,
-    /// Any error code other than 0 indicates that the decompression failed, with the error code being from the Kraken decompressor.
+    /// Decompression failed with Kraken decompressor error code.
+    /// Negative error codes indicate decompression failure.
     #[error("Decompression failed with error code {0}")]
     DecompressionFailed(i32),
 }
@@ -67,25 +74,25 @@ pub enum DecompressionError {
 #[derive(Error, Debug)]
 /// Standard error type used throughout `infinite-rs`.
 pub enum Error {
-    /// Any error originating from `std::io`, such as `UnexpectedEOF`.
+    /// IO error from [`std::io`] operations.
     #[error("Failed to read from buffer!")]
-    ReadError(#[from] std::io::Error),
-    /// Error that can occur in `read_fixed_string` if invalid UTF-8 encoding is found.
+    ReadError(#[from] StdIoError),
+    /// UTF-8 decoding error in [`read_fixed_string`](`crate::common::extensions::BufReaderExt::read_fixed_string`).
     #[error("Incorrect UTF-8 encoding found when reading string!")]
-    Utf8ReadingError(#[from] std::string::FromUtf8Error),
-    /// Errors that can occur while decompressing using Kraken.
+    Utf8ReadingError(#[from] FromUtf8Error),
+    /// Kraken decompression error.
     #[error("Error occured while decompressing!")]
     DecompressionError(#[from] DecompressionError),
-    /// Errors that can occur while loading a module file.
+    /// Module file loading error.
     #[error("Error occured while loading a module!")]
     ModuleError(#[from] ModuleError),
-    /// The error type returned when a checked integral type conversion fails.
+    /// Integer type conversion error.
     #[error("Integer conversion failed!")]
     TryFromIntError(#[from] TryFromIntError),
-    /// Errors that can occur while loading a tag file.
+    /// Tag file loading error.
     #[error("Error occured while loading a tag!")]
     TagError(#[from] TagError),
 }
 
 /// Standard result type used throughout `infinite-rs`.
-pub type Result<T> = std::result::Result<T, Error>;
+pub type Result<T> = StdResult<T, Error>;
