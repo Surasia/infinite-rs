@@ -1,5 +1,13 @@
 # infinite-rs Changelog
 
+## 0.5.2 - 2024-11-22
+- All tuple-like field types in `common_types` are now public.
+- Internal: Each block does not create its own `BufReader` anymore.
+- Fixed major issue affecting `FieldBlock` reads.
+
+## 0.5.1 - 2024-11-21
+- Fixed docs.rs issues.
+
 ## 0.5.0 - 2024-11-21
 - Many documentation items have been improved and inner links added
 - Internal: `Readable` has been renamed to `Enumerable`

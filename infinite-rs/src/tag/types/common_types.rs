@@ -4,7 +4,7 @@ use byteorder::{ReadBytesExt, LE};
 use num_enum::TryFromPrimitive;
 use std::{
     fmt::Debug,
-    io::{BufRead, BufReader, Cursor, Seek, SeekFrom},
+    io::{BufRead, Seek, SeekFrom},
 };
 
 use crate::{
@@ -735,26 +735,26 @@ impl<T: TagStructure + Debug + Default> FieldBlock<T> {
         if let Some(block_struct) = block_struct {
             #[allow(clippy::cast_sign_loss)]
             let block = &blocks[block_struct.target_index as usize];
+            let size = T::default().size();
 
-            // The entry size is always `block_size * size`, so we rely on it to create a buffer for the elements.
-            let mut block_buffer = vec![0; block.entry_size as usize];
+            // We first read the object itself without any of its children
             reader.seek(SeekFrom::Start(block.offset))?;
-            reader.read_exact(&mut block_buffer)?;
-            let mut block_reader = BufReader::new(Cursor::new(block_buffer));
+            for _ in 0..self.size {
+                let mut object = T::default();
+                object.read(reader)?;
+                self.elements.push(object);
+            }
 
-            for i in 0..self.size {
-                let mut struct_type = T::default(); // Default is used to instantiate a new object.
-                let block_size = struct_type.size();
-                struct_type.read(&mut block_reader)?;
-                struct_type.load_field_blocks(
+            // We then read the children, with the adjusted size parameter depending on the size.
+            for (idx, element) in self.elements.iter_mut().enumerate() {
+                let adjusted_base = size * idx as u64;
+                element.load_field_blocks(
                     block_struct.target_index,
+                    adjusted_base,
                     reader,
                     structs,
                     blocks,
                 )?;
-                // The last element in a `TagStructure` may not be offset to its size, so we account for that.
-                block_reader.seek(SeekFrom::Start(block_size * u64::from(i)))?;
-                self.elements.push(struct_type);
             }
         }
         Ok(())

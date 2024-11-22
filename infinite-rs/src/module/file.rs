@@ -65,6 +65,7 @@ pub trait TagStructure {
     fn load_field_blocks<R: BufReaderExt>(
         &mut self,
         source_index: i32,
+        adjusted_base: u64,
         reader: &mut R,
         structs: &[TagStruct],
         blocks: &[TagDataBlock],
@@ -302,7 +303,9 @@ impl ModuleFileEntry {
     /// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
     /// the I/O error if any reading operation fails.
     pub fn read_metadata<T: Default + TagStructure>(&mut self, struct_type: &mut T) -> Result<T> {
-        let mut full_tag = Vec::with_capacity(self.total_uncompressed_size as usize);
+        let mut full_tag = Vec::with_capacity(
+            self.total_uncompressed_size as usize - self.uncompressed_header_size as usize,
+        );
         self.data_stream
             .as_mut()
             .ok_or(Error::TagError(TagError::NotLoaded))?
@@ -312,6 +315,7 @@ impl ModuleFileEntry {
             .tag_info
             .as_ref()
             .ok_or(Error::TagError(TagError::NoTagInfo))?;
+
         let main_struct = tag_info
             .struct_definitions
             .iter()
@@ -327,6 +331,7 @@ impl ModuleFileEntry {
         struct_type.read(&mut full_tag_reader)?;
         struct_type.load_field_blocks(
             main_struct.target_index,
+            0,
             &mut full_tag_reader,
             &tag_info.struct_definitions[..],
             &tag_info.datablock_definitions[..],

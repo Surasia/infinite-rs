@@ -77,7 +77,7 @@ fn tag_structure_derive2(
                     let field_name = &field.ident;
                     let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
                     return Some(quote! {
-                        self.#field_name.load_blocks(source_index, #offset, reader, structs, blocks)?;
+                        self.#field_name.load_blocks(source_index, adjusted_base + #offset, reader, structs, blocks)?;
                     });
                 }
             }
@@ -93,6 +93,7 @@ fn tag_structure_derive2(
             fn read<R: infinite_rs::common::extensions::BufReaderExt>(&mut self, reader: &mut R) -> infinite_rs::Result<()> {
                 let main_offset = reader.stream_position()?;
                 #(#field_reads)*
+                reader.seek(std::io::SeekFrom::Start(main_offset + self.size()))?;
                 Ok(())
             }
 
@@ -107,6 +108,7 @@ fn tag_structure_derive2(
             fn load_field_blocks<R: std::io::BufRead + std::io::Seek + infinite_rs::common::extensions::BufReaderExt>(
                 &mut self,
                 source_index: i32,
+                adjusted_base: u64,
                 reader: &mut R,
                 structs: &[infinite_rs::tag::structure::TagStruct],
                 blocks: &[infinite_rs::tag::datablock::TagDataBlock],
