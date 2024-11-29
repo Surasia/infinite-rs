@@ -169,8 +169,10 @@ fn main() -> infinite_rs::Result<()> {
             if tag.tag_group == "mat " {
                 let mut mat = MaterialTag::default();
                 tag.read_metadata(&mut mat)?;
-                println!("{:#?}", mat.style_info);
             }
+            // explicitly drop buffer to free up memory
+            // normally, can take 50+ GBs of RAM
+            module.files[index].data_stream = None
         }
     }
     Ok(())

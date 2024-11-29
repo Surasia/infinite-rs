@@ -75,7 +75,7 @@ pub trait TagStructure {
 bitflags! {
     #[derive(Debug, Default)]
     /// Flags for the last 2 bytes of the data offset.
-    pub(super) struct DataOffsetType : u16  {
+    pub struct DataOffsetType : u16  {
         /// No additional HD1 module is required.
         const USE_SELF = 0;
         /// Additional HD1 module is required.
@@ -111,7 +111,7 @@ pub struct ModuleFileEntry {
     /// Index of the first block in the module.
     block_index: i32,
     /// Index of the first resource in the module's resource list.
-    pub(super) resource_index: i32,
+    pub resource_index: i32,
     /// 4 byte-long string for tag group, stored as big endian. This determines how the rest of the tag is read.
     /// Example:
     /// * `bitm`: Bitmap
@@ -120,23 +120,23 @@ pub struct ModuleFileEntry {
     /// Offset of compressed/uncompressed data in from the start of compressed data in the module.
     data_offset: u64,
     /// Where the offset is located. 1 if in HD1.
-    pub(super) data_offset_flags: DataOffsetType,
+    pub data_offset_flags: DataOffsetType,
     /// Size in bytes of compressed buffer in module.
-    total_compressed_size: u32,
+    pub total_compressed_size: u32,
     /// Size in bytes of buffer to decompress into.
-    total_uncompressed_size: u32,
+    pub total_uncompressed_size: u32,
     /// `MurmurHash3_x86_64` 32 bit hash of tag path.
     /// Referred to in-memory as "global tag id"
     /// Is set to -1 if file is resource.
     pub tag_id: i32,
     /// Size in bytes of header in decompressed buffer.
-    pub(super) uncompressed_header_size: u32,
+    pub uncompressed_header_size: u32,
     /// Size in bytes of actual tag data in decompressed buffer.
-    uncompressed_tag_data_size: u32,
+    pub uncompressed_tag_data_size: u32,
     /// Size in bytes of resource data in decompressed buffer.
-    uncompressed_resource_data_size: u32,
+    pub uncompressed_resource_data_size: u32,
     /// Size in bytes of "external" resource data in decompressed buffer. (for instance, havok data or bitmaps)
-    uncompressed_actual_resource_size: u32,
+    pub uncompressed_actual_resource_size: u32,
     /// Power of 2 to align the header buffer to (ex w. 4 = align to a multiple of 16 bytes).
     header_alignment: u8,
     /// Power of 2 to align the tag data buffer to.
@@ -149,13 +149,13 @@ pub struct ModuleFileEntry {
     /// This is no longer valid as of module version 52.
     name_offset: u32,
     /// Used with resources to point back to the parent file. -1 = none
-    parent_index: i32,
+    pub parent_index: i32,
     /// `Murmur3_x64_128` hash of (what appears to be) the original file that this file was built from.
     /// This is not always the same thing as the file stored in the module.
     /// Only verified if the `HasBlocks` flag is not set.
-    asset_hash: i128,
+    pub asset_hash: i128,
     /// Number of resources owned by the file.
-    pub(super) resource_count: i32,
+    pub resource_count: i32,
     /// Data stream containing a buffer of bytes to read/seek.
     pub data_stream: Option<BufReader<Cursor<Vec<u8>>>>,
     /// The actual tag file read from the contents (including header), only valid if file is not a resource.
@@ -172,9 +172,9 @@ impl Enumerable for ModuleFileEntry {
         self.block_index = reader.read_i32::<LE>()?;
         self.resource_index = reader.read_i32::<LE>()?;
         self.tag_group = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
-        self.data_offset = reader.read_u64::<LE>()? & 0x0000_FFFF_FFFF_FFFF; // Mask first 6 bytes
-        self.data_offset_flags =
-            DataOffsetType::from_bits_truncate((self.data_offset >> 48) as u16); // Read last 2 bytes
+        let data_offset = reader.read_u64::<LE>()?;
+        self.data_offset = data_offset & 0x0000_FFFF_FFFF_FFFF; // Mask first 6 bytes
+        self.data_offset_flags = DataOffsetType::from_bits_retain((data_offset >> 48) as u16); // Read last 2 bytes
         self.total_compressed_size = reader.read_u32::<LE>()?;
         self.total_uncompressed_size = reader.read_u32::<LE>()?;
         self.tag_id = reader.read_i32::<LE>()?;
@@ -231,7 +231,6 @@ impl ModuleFileEntry {
 
         let data_stream = BufReader::new(Cursor::new(data));
         self.data_stream = Some(data_stream);
-
         if self.tag_id != -1 {
             let mut tagfile = TagFile::default();
             if let Some(ref mut stream) = self.data_stream {
@@ -288,7 +287,7 @@ impl ModuleFileEntry {
 
     /// Reads a specified structure implementing [`TagStructure`] from the tag data.
     ///
-    /// This function exhausts the inner [`data_stream`](`self.data_stream`) buffer to read the contents of the specified
+    /// This function exhausts the inner [`data_stream`](`ModuleFileEntry::data_stream`) buffer to read the contents of the specified
     /// struct. It first looks for the main struct definition of the file, then gets the referenced
     /// data block and creates a reader for it. The initial contents of the struct are read, and
     /// field block definitions are loaded recursively.

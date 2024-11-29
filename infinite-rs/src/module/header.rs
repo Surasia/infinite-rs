@@ -30,7 +30,7 @@ pub struct ModuleHeader {
     manifest1_count: u32,
     /// Unknown: not present in any modules.
     manifest2_count: u32,
-    /// Index of the first resource entry ([`file_count`](`self.file_count`) - [`resource_count`](`self.resource_count`])).
+    /// Index of the first resource entry ([`file_count`](`ModuleHeader::file_count`) - [`resource_count`](`ModuleHeader::resource_count`)).
     resource_index: i32,
     /// Total size in bytes of the string table.
     strings_size: u32,

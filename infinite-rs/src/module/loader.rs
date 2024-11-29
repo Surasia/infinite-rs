@@ -23,7 +23,7 @@ pub struct ModuleFile {
     /// Metadata regarding compression and layout of files (tags).
     pub files: Vec<ModuleFileEntry>,
     /// Indices of resource files present in the module.
-    resource_indices: Vec<u32>,
+    pub resource_indices: Vec<u32>,
     /// Uncompressed/compressed blocks making up a file.
     blocks: Vec<ModuleBlockEntry>,
     /// Offset in [`BufReader`] where file data starts.
@@ -32,6 +32,8 @@ pub struct ModuleFile {
     module_file: Option<BufReader<File>>,
     /// Reference to HD1 buffer if it exists.
     hd1_file: Option<BufReader<File>>,
+    /// Whether to use the HD1 module or not.
+    pub use_hd1: bool,
 }
 
 impl ModuleFile {
@@ -86,6 +88,7 @@ impl ModuleFile {
         if self.header.hd1_delta != 0 {
             let hd1 = file_path.as_ref().join("_hd1");
             if hd1.exists() {
+                self.use_hd1 = true;
                 let file = File::open(hd1)?;
                 self.hd1_file = Some(BufReader::new(file));
             }
@@ -103,7 +106,7 @@ impl ModuleFile {
     /// # Arguments
     ///
     /// * `index` - The index of the file entry to read the tag from. This index corresponds to
-    ///             the position of the file entry in the [`files`](`self.files`) vector.
+    ///             the position of the file entry in the [`files`](`ModuleFile::files`) vector.
     ///
     /// # Returns
     ///
@@ -111,9 +114,6 @@ impl ModuleFile {
     /// the I/O error if any reading operation fails.
     pub fn read_tag(&mut self, index: u32) -> Result<()> {
         let file = &mut self.files[index as usize];
-        if file.tag_id == -1 {
-            return Ok(()); // Early return for resources, some tags are simply not valid.
-        }
         if file.data_offset_flags.contains(DataOffsetType::USE_HD1) {
             if let Some(ref mut module_file) = self.hd1_file {
                 let offset = self.file_data_offset - self.header.hd1_delta;
@@ -127,8 +127,8 @@ impl ModuleFile {
 
     /// Searches for the index of the tag given the `global_id`.
     ///
-    /// This function searches for the index of a tag in the [`files`](`self.files`) vector using the provided
-    /// `global_id`. If the tag is found, it reads the tag using the [`read_tag`](`self.read_tag`) function and
+    /// This function searches for the index of a tag in the [`files`](`ModuleFile::files`) vector using the provided
+    /// `global_id`. If the tag is found, it reads the tag using the [`read_tag`](`ModuleFile::read_tag`) function and
     /// stores it in the index.
     ///
     /// # Arguments
@@ -148,31 +148,5 @@ impl ModuleFile {
         } else {
             Ok(None)
         }
-    }
-
-    /// Reads the resources referenced by a module entry.
-    ///
-    /// This function reads the resources referenced by a specific module entry. It retrieves
-    /// the resources based on the provided index and returns them as a vector of references
-    /// to [`ModuleFileEntry`].
-    ///
-    /// # Arguments
-    ///
-    /// * `index` - Index of the file to read the resources of. This index corresponds to the
-    ///             position of the file entry in the `files` vector.
-    ///
-    /// # Returns
-    ///
-    /// Returns `Ok(Vec<&ModuleFileEntry>)` if the read operation is successful, containing a
-    /// vector of references to [`ModuleFileEntry`]. If the requested resource wasn't found in
-    /// the module, an [`Error`](`crate::Error`) is returned.
-    #[allow(clippy::cast_sign_loss)]
-    pub fn read_resources(&mut self, index: u32) -> Result<Vec<&ModuleFileEntry>> {
-        let entry = &self.files[index as usize];
-        let mut resources = Vec::with_capacity(entry.resource_count as usize);
-        for i in entry.resource_index..entry.resource_index + entry.resource_count {
-            resources.push(&self.files[self.resource_indices[i as usize] as usize]);
-        }
-        Ok(resources)
     }
 }

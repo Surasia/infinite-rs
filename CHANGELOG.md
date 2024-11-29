@@ -1,5 +1,11 @@
 # infinite-rs Changelog
 
+## 0.6.0 - 2024-11-29
+- FIX: HD1 tags are now properly identified.
+- Multiple fields in `ModuleFileEntry` have been made public.
+- Added `use_hd1` field to `ModuleFile`
+- Removed `read_resources` from `ModuleFile`.
+
 ## 0.5.3 - 2024-11-22
 - Internal: Each block does not create its own `BufReader` anymore.
 - Fixed major issue affecting `FieldBlock` reads.
