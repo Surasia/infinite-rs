@@ -8,7 +8,7 @@ use crate::common::errors::{Error, TagError};
 use crate::common::extensions::Enumerable;
 use crate::Result;
 
-#[derive(Default, Debug, TryFromPrimitive)]
+#[derive(Default, Debug, TryFromPrimitive, PartialEq, Eq)]
 #[repr(u16)]
 /// Location where the data referenced in the tag block is found.
 pub enum TagSectionType {

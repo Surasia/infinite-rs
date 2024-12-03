@@ -73,7 +73,7 @@ pub trait TagStructure {
 }
 
 bitflags! {
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, PartialEq, Eq)]
     /// Flags for the last 2 bytes of the data offset.
     pub struct DataOffsetType : u16  {
         /// No additional HD1 module is required.
@@ -86,7 +86,7 @@ bitflags! {
 }
 
 bitflags! {
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, PartialEq, Eq)]
     /// Flags that determine how a tag should be read.
     pub struct FileEntryFlags : u8  {
         /// If tag is compressed or not.

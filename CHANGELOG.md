@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.6.1 - 2024-12-03
+- Added `PartialEq` and `Eq` implementations for `DataOffsetType`, `FieldEntryFlags` and `TagSectionType`.
+
 ## 0.6.0 - 2024-11-29
 - FIX: HD1 tags are now properly identified.
 - Multiple fields in `ModuleFileEntry` have been made public.
