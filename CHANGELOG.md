@@ -1,5 +1,9 @@
 # infinite-rs Changelog
 
+## 0.6.2 - 2024-12-10
+- Made some fields in `TagHeader` public.
+- Added example `load_scripts`.
+
 ## 0.6.1 - 2024-12-03
 - Added `PartialEq` and `Eq` implementations for `DataOffsetType`, `FieldEntryFlags` and `TagSectionType`.
 

@@ -18,37 +18,37 @@ pub struct TagHeader {
     /// Note: this is also the tag version from Halo 5!
     version: i32,
     /// Secondary GUID to identify the root structure.
-    root_struct_guid: i64,
+    pub root_struct_guid: i64,
     /// Checksum generated from unknown algorithm
-    checksum: i64,
+    pub checksum: i64,
     /// Number of tags required to load tag.
-    pub(super) dependency_count: u32,
+    pub dependency_count: u32,
     /// Number of datablocks that exist within tag (offsets, sections etc).
-    pub(super) datablock_count: u32,
+    pub datablock_count: u32,
     /// Number of tag struct definitions that make up the actual structure of the tag.
-    pub(super) tagstruct_count: u32,
+    pub tagstruct_count: u32,
     /// Number of "external" data references (to other tags) in tag.
-    pub(super) data_reference_count: u32,
+    pub data_reference_count: u32,
     /// Number of internal references to structures.
-    pub(super) tag_reference_count: u32,
+    pub tag_reference_count: u32,
     /// Size in bytes of string table inside tag.
     /// Unused after Halo 5.
     string_table_size: u32,
     /// Size in bytes of "zoneset" section of tag.
     /// Unknown use.
-    zoneset_size: u32,
+    pub zoneset_size: u32,
     /// Unknown. Possibly used to split something in memory.
     unknown: u32,
     /// Size of the header and the fields read by it (dependencies, datablocks, etc.).
     /// Important as sometimes the offset after reading those fields does not match up to where tag data starts.
     /// Might be some sort of internal padding measure.
-    pub(crate) header_size: u32,
+    pub header_size: u32,
     /// Size of actual data in tag, referenced in tag structs.
-    data_size: u32,
+    pub data_size: u32,
     /// Size of resource in tag (after data!)
-    resource_size: u32,
+    pub resource_size: u32,
     /// Size of "external" data, for instance Havok data.
-    actual_resource_size: u32,
+    pub actual_resource_size: u32,
     /// Power of 2 to align the header to.
     header_alignment: u8,
     /// Power of 2 to align the tag data to.
