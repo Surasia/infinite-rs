@@ -1,26 +1,39 @@
 //! Module Header containing info on the layout of the module file.
 
 use byteorder::{ReadBytesExt, LE};
+use num_enum::TryFromPrimitive;
 use std::{fs::File, io::BufReader};
 
 use crate::common::errors::{Error, ModuleError};
 use crate::Result;
 
 const HEADER_MAGIC: u32 = 0x6468_6F6D; // "mohd"
-const HEADER_VERSION: i32 = 0x34; // 52
+
+#[derive(Default, Debug, PartialEq, Eq, TryFromPrimitive, PartialOrd, Ord)]
+#[repr(i32)]
+/// Revision number of a module file.
+/// This version number determines how tags should be read.
+pub enum ModuleVersion {
+    /// First "technical preview" build from July 2021.
+    Flight1 = 48,
+    /// Second technical preview (August 2021) and release version from November 2021.
+    Release = 51,
+    /// Build from March 2023, which introduced notable changes to the module structure.
+    Season3 = 52,
+    #[default]
+    /// Builds from after January 2024 (CU29). Identical to Season 3.
+    ContentUpdates = 53,
+}
 
 #[derive(Default, Debug)]
 /// Module Header structure containing info on the layout of the module file.
-/// Version 53+.
 pub struct ModuleHeader {
     /// Should be "mohd" (0x64686F6D)
     magic: u32,
-    /// Flight 1: 48 /
-    /// Flight 2: 51 & Retail /
-    /// Season 3+: 52
-    /// CU30+: 53
-    version: i32,
-    /// Unique identifier. (not a hash?)
+    /// Revision number of the module.
+    /// This determines how offsets are calculated and if tag names should be read.
+    pub version: ModuleVersion,
+    /// Unique identifier of module.
     module_id: i64,
     /// Number of files in the module.
     pub(super) file_count: u32,
@@ -45,6 +58,8 @@ pub struct ModuleHeader {
     /// Total size of packed data in the module.
     /// Both compressed and uncompressed.
     /// Starts after files, blocks, and resources have been read.
+    ///
+    /// This does NOT apply for versions before [`ModuleVersion::Season3`].
     pub(super) data_size: u64,
 }
 
@@ -63,20 +78,15 @@ impl ModuleHeader {
     ///
     /// This function will return an error if:
     /// * The magic string is not "mohd"
-    /// * The version is less than or equal to 0x34
+    /// * The version is not in the valid range defined by [`ModuleVersion`]
     /// * Any I/O error occurs while reading
     pub(super) fn read(&mut self, reader: &mut BufReader<File>) -> Result<()> {
         self.magic = reader.read_u32::<LE>()?;
         if self.magic != HEADER_MAGIC {
             return Err(Error::ModuleError(ModuleError::IncorrectMagic(self.magic)));
         }
-
-        self.version = reader.read_i32::<LE>()?;
-        if self.version <= HEADER_VERSION {
-            return Err(Error::ModuleError(ModuleError::IncorrectVersion(
-                self.version,
-            )));
-        }
+        self.version = ModuleVersion::try_from_primitive(reader.read_i32::<LE>()?)
+            .map_err(ModuleError::IncorrectVersion)?;
 
         self.module_id = reader.read_i64::<LE>()?;
         self.file_count = reader.read_u32::<LE>()?;
@@ -90,7 +100,9 @@ impl ModuleHeader {
         self.build_version = reader.read_u64::<LE>()?;
         self.hd1_delta = reader.read_u64::<LE>()?;
         self.data_size = reader.read_u64::<LE>()?;
-        reader.seek_relative(8)?; // Not needed for now.
+        if self.version != ModuleVersion::Flight1 {
+            reader.seek_relative(8)?; // Not needed for now.
+        }
         Ok(())
     }
 }

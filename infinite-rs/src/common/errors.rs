@@ -7,18 +7,21 @@ use std::result::Result as StdResult;
 use std::string::FromUtf8Error;
 use thiserror::Error;
 
-use crate::tag::{datablock::TagSectionType, structure::TagStructType};
+use crate::{
+    module::header::ModuleVersion,
+    tag::{datablock::TagSectionType, structure::TagStructType},
+};
 
 #[derive(Error, Debug)]
 /// Errors that can occur when reading a module file.
 pub enum ModuleError {
     /// Incorrect magic number found in the module file header. Expected magic number is "ucsh" (0x64686F6D).
-    #[error("Incorrect magic found! Expected '0x64686F6D', found {0:#X}!")]
+    #[error("Incorrect module magic found! Expected '0x64686F6D', found {0:#X}!")]
     IncorrectMagic(u32),
     /// Incorrect version number found in the module file header. Expected version is 53.
     /// While version 53 is the only fully supported version, other versions may also work.
-    #[error("Incorrect version found! Expected '53', found {0}!")]
-    IncorrectVersion(i32),
+    #[error("Incorrect module version found!")]
+    IncorrectVersion(#[from] TryFromPrimitiveError<ModuleVersion>),
     /// Invalid negative block index found in module file, indicating file corruption.
     /// This error serves as a runtime assert.
     #[error("Module file block index must be non-negative, found {0}")]

@@ -3,15 +3,10 @@
 use std::io::SeekFrom;
 
 use super::{
-    data_reference::TagDataReference,
-    datablock::TagDataBlock,
-    dependency::TagDependency,
-    header::TagHeader,
-    reference::TagReference,
-    structure::TagStruct,
-    zoneset::{header::TagZonesetHeader, instance::TagZoneset},
+    data_reference::TagDataReference, datablock::TagDataBlock, dependency::TagDependency,
+    header::TagHeader, reference::TagReference, structure::TagStruct,
 };
-use crate::common::extensions::{BufReaderExt, Enumerable};
+use crate::common::extensions::BufReaderExt;
 use crate::Result;
 
 #[derive(Default, Debug)]
@@ -29,13 +24,9 @@ pub struct TagFile {
     pub data_references: Vec<TagDataReference>,
     /// Tags that are referenced by this tag inside the module.
     pub tag_references: Vec<TagReference>,
-    /// Zoneset header for reading the other zonesets.
-    pub(crate) zoneset_header: TagZonesetHeader,
-    /// Zonesets, unknown what these are.
-    pub(crate) zonesets: Vec<TagZoneset>,
 }
 
-impl Enumerable for TagFile {
+impl TagFile {
     /// Reads the tag fike from the given readers implementing [`BufReaderExt`].
     /// # Arguments
     ///
@@ -45,7 +36,7 @@ impl Enumerable for TagFile {
     ///
     /// Returns `Ok(())` if the header is successfully read, or an [`Error`](`crate::Error`) if an I/O error occurs
     /// or if the header data is invalid.
-    fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
+    pub fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.header.read(reader)?;
         self.dependencies =
             reader.read_enumerable::<TagDependency>(u64::from(self.header.dependency_count))?;
@@ -61,12 +52,6 @@ impl Enumerable for TagFile {
 
         self.tag_references =
             reader.read_enumerable::<TagReference>(u64::from(self.header.tag_reference_count))?;
-
-        self.zoneset_header.read(reader)?;
-
-        self.zonesets =
-            reader.read_enumerable::<TagZoneset>(u64::from(self.zoneset_header.zoneset_count))?;
-
         // Ensure that tag data starts where it is supposed to.
         reader.seek(SeekFrom::Start(u64::from(self.header.header_size)))?;
         Ok(())
