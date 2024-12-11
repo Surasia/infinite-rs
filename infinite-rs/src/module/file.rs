@@ -172,7 +172,7 @@ impl ModuleFileEntry {
     ///
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader implementing BufReaderExt
+    /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
     /// * `module_version` - Version of the module being read
     ///
     /// # Returns
@@ -196,7 +196,7 @@ impl ModuleFileEntry {
     ///
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader implementing BufReaderExt
+    /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
     ///
     /// # Returns
     ///
@@ -235,7 +235,7 @@ impl ModuleFileEntry {
     ///
     /// # Arguments
     ///
-    /// * `reader` - A mutable reference to a reader implementing BufReaderExt
+    /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
     ///
     /// # Returns
     ///
