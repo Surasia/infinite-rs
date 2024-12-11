@@ -10,7 +10,7 @@ use std::{
 use super::{
     block::ModuleBlockEntry,
     file::{DataOffsetType, ModuleFileEntry},
-    header::ModuleHeader,
+    header::{ModuleHeader, ModuleVersion},
 };
 use crate::common::extensions::BufReaderExt;
 use crate::Result;
@@ -68,8 +68,28 @@ impl ModuleFile {
         self.header.read(&mut reader)?;
         self.open_hd1(file_path)?;
 
-        self.files =
-            reader.read_enumerable::<ModuleFileEntry>(u64::from(self.header.file_count))?;
+        for _ in 0..self.header.file_count {
+            let mut file = ModuleFileEntry::default();
+            file.read(&mut reader, &self.header.version)?;
+            self.files.push(file);
+        }
+        // Read strings contained in the file. A stringlist only exists in files before Season 3.
+        // Each entry is seperated by a null terminator, and files specify their offset themselves
+        // in no particular order, so we cannot pre-read and just index into them.
+        //
+        // For files from modules that do not contain strings, we simply use the `tag_id` property.
+        let strings_offset = reader.stream_position()?;
+        for file in &mut self.files {
+            if self.header.version <= ModuleVersion::CampaignFlight {
+                reader.seek(SeekFrom::Start(
+                    strings_offset + u64::from(file.name_offset),
+                ))?;
+                file.tag_name = reader.read_null_terminated_string()?;
+            } else {
+                file.tag_name = file.tag_id.to_string();
+            }
+        }
+
         self.resource_indices = (0..self.header.resource_count)
             .map(|_| -> Result<u32> { Ok(reader.read_u32::<LE>()?) })
             .collect::<Result<Vec<_>>>()?;
@@ -110,19 +130,24 @@ impl ModuleFile {
     ///
     /// # Returns
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an [`Error`](`crate::Error`) containing
-    /// the I/O error if any reading operation fails.
-    pub fn read_tag(&mut self, index: u32) -> Result<()> {
+    /// Returns `Some(i32))` containing the [`tag_id`](`ModuleFileEntry::tag_id`) of the file if the read operation is successful, or an [`Error`](`crate::Error`), a [`None`] if the file was not read (if tag offset is specified as invalid) or the containing the I/O error if any reading operation fails.
+    pub fn read_tag(&mut self, index: u32) -> Result<Option<i32>> {
         let file = &mut self.files[index as usize];
+        if file.data_offset_flags.contains(DataOffsetType::INVALID) {
+            return Ok(None);
+        }
         if file.data_offset_flags.contains(DataOffsetType::USE_HD1) {
             if let Some(ref mut module_file) = self.hd1_file {
-                let offset = self.file_data_offset - self.header.hd1_delta;
+                let mut offset = self.file_data_offset - self.header.hd1_delta;
+                if self.header.version <= ModuleVersion::Season3 {
+                    offset = self.header.hd1_delta;
+                }
                 file.read_tag(module_file, offset, &self.blocks)?;
             }
         } else if let Some(ref mut module_file) = self.module_file {
             file.read_tag(module_file, self.file_data_offset, &self.blocks)?;
         }
-        Ok(())
+        Ok(Some(file.tag_id))
     }
 
     /// Searches for the index of the tag given the `global_id`.

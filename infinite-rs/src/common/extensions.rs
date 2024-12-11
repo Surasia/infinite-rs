@@ -75,6 +75,39 @@ pub trait BufReaderExt: BufRead + Seek {
         Ok(string)
     }
 
+    /// Reads a null-terminated string from the reader.
+    ///
+    /// This function reads bytes in a reader until it hits `0x00` and converts them to a String.
+    /// The null terminator is removed from the final output.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(String)` - The UTF-8 string read from the buffer
+    /// * `Err(Error)` - If reading fails or the bytes are not valid UTF-8
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::io::Cursor;
+    /// use std::io::BufReader;
+    /// use infinite_rs::common::extensions::BufReaderExt;
+    ///
+    /// let data = [0x49, 0x20, 0x6c, 0x6f, 0x76, 0x65, 0x20, 0x63, 0x61, 0x74, 0x73, 0x21, 0x00];
+    /// let mut reader = BufReader::new(Cursor::new(data));
+    /// let string = reader.read_null_terminated_string().unwrap();
+    /// assert_eq!(string, "I love cats!");
+    /// ```
+    fn read_null_terminated_string(&mut self) -> Result<String> {
+        let mut buffer = Vec::with_capacity(150); // Pre-allocate around 150 bytes (typical
+                                                  // filename size)
+        self.read_until(0x00, &mut buffer)?;
+        buffer.pop(); // remove null terminator
+
+        let string = String::from_utf8(buffer)?;
+
+        Ok(string)
+    }
+
     /// Reads multiple instances of an enumerable type into a vector.
     ///
     /// Creates a vector of type T by reading the type `count` times from the buffer.

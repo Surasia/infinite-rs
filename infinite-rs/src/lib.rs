@@ -41,10 +41,12 @@ fn load_tags() -> Result<()> {
 
     // Load a specific tag from the module file.
     let tag_index = 0;
-    module.read_tag(tag_index)?;
-    // We can now access the data stream and tag info.
-    let tag_data = module.files[tag_index as usize].data_stream.as_ref().unwrap();
-    let tag_info = module.files[tag_index as usize].tag_info.as_ref().unwrap();
+    let id = module.read_tag(tag_index)?;
+    if id.is_some() {
+        // We can now access the data stream and tag info.
+        let tag_data = module.files[tag_index as usize].data_stream.as_ref().unwrap();
+        let tag_info = module.files[tag_index as usize].tag_info.as_ref().unwrap();
+    }
     Ok(())
 }
 ```
@@ -104,13 +106,15 @@ fn load_tags() -> Result<()> {
     // And for each material tag, we want to read the metadata associated.
     for index in material_indices {
         // We first have to populate data_stream and tag_info.
-        module.read_tag(index as u32)?;
-        let mut mat = MaterialTag::default();
-        // We pass in our structure as a generic parameter.
-        module.files[index].read_metadata(&mut mat)?;
-        // We can now access the fields in our structure.
-        // For instance, `any_tag.internal_struct.tag_id` is always equal to the tag id of our file.
-        assert_eq!(module.files[index].tag_id, mat.any_tag.internal_struct.tag_id);
+        let id = module.read_tag(index as u32)?;
+        if id.is_some() {
+            let mut mat = MaterialTag::default();
+            // We pass in our structure as a generic parameter.
+            module.files[index].read_metadata(&mut mat)?;
+            // We can now access the fields in our structure.
+            // For instance, `any_tag.internal_struct.tag_id` is always equal to the tag id of our file.
+            assert_eq!(module.files[index].tag_id, mat.any_tag.internal_struct.tag_id);
+        }
     }
     Ok(())
 }

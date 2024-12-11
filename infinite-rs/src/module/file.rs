@@ -9,9 +9,9 @@ use std::{
     io::{BufReader, Cursor, Read, Seek, SeekFrom},
 };
 
+use super::header::ModuleVersion;
 use super::{block::ModuleBlockEntry, kraken::decompress};
 use crate::common::errors::{ModuleError, TagError};
-use crate::common::extensions::Enumerable;
 use crate::tag::datablock::TagDataBlock;
 use crate::tag::structure::{TagStruct, TagStructType};
 use crate::{common::extensions::BufReaderExt, tag::loader::TagFile};
@@ -80,8 +80,8 @@ bitflags! {
         const USE_SELF = 0;
         /// Additional HD1 module is required.
         const USE_HD1 = 0b0000_0001;
-        /// Unknown (HD2)?
-        const USE_HD2 = 0b0000_0010;
+        /// Indicates that this file should not be read.
+        const INVALID = 0b0000_0010;
     }
 }
 
@@ -119,7 +119,7 @@ pub struct ModuleFileEntry {
     pub tag_group: String,
     /// Offset of compressed/uncompressed data in from the start of compressed data in the module.
     data_offset: u64,
-    /// Where the offset is located. 1 if in HD1.
+    /// Where the offset is located.
     pub data_offset_flags: DataOffsetType,
     /// Size in bytes of compressed buffer in module.
     pub total_compressed_size: u32,
@@ -146,8 +146,8 @@ pub struct ModuleFileEntry {
     /// Power of 2 to align the actual resource data buffer to.
     actual_resource_data_alignment: u8,
     /// Offset where the name of the file is located in the string table.
-    /// This is no longer valid as of module version 52.
-    name_offset: u32,
+    /// This is not read after [`ModuleVersion::Season3`](crate::module::header::ModuleVersion::Season3).
+    pub(crate) name_offset: u32,
     /// Used with resources to point back to the parent file. -1 = none
     pub parent_index: i32,
     /// `Murmur3_x64_128` hash of (what appears to be) the original file that this file was built from.
@@ -162,10 +162,85 @@ pub struct ModuleFileEntry {
     pub tag_info: Option<TagFile>,
     /// Indicates if file is cached (has data stream) or not.
     is_loaded: bool,
+    /// Name of the tag as specified in the module string list.
+    /// Set to tag id if module version does not support names.
+    pub tag_name: String,
 }
 
-impl Enumerable for ModuleFileEntry {
-    fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
+impl ModuleFileEntry {
+    /// Reads module file entry data from a reader based on the module version.
+    ///
+    /// # Arguments
+    ///
+    /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
+    /// * `module_version` - Version of the module being read
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if read is successful, or an `Error` if reading fails
+    pub fn read<R: BufReaderExt>(
+        &mut self,
+        reader: &mut R,
+        module_version: &ModuleVersion,
+    ) -> Result<()> {
+        if module_version == &ModuleVersion::Flight1 {
+            self.read_flight1(reader)?;
+        } else {
+            self.read_other(reader)?;
+        }
+        reader.seek_relative(4)?; // Skip some padding
+        Ok(())
+    }
+
+    /// Reads module file entry data specifically for modules of version [`Flight1`](`ModuleVersion::Flight1`).
+    ///
+    /// # Arguments
+    ///
+    /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if read is successful, or an `Error` if reading fails
+    fn read_flight1<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
+        self.name_offset = reader.read_u32::<LE>()?;
+        self.parent_index = reader.read_i32::<LE>()?;
+        self.resource_count = reader.read_u16::<LE>()?.into();
+        self.block_count = reader.read_u16::<LE>()?;
+        self.resource_index = reader.read_i32::<LE>()?;
+        self.block_index = reader.read_i32::<LE>()?;
+        self.tag_group = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
+        let data_offset = reader.read_u64::<LE>()?;
+        self.data_offset = data_offset & 0x0000_FFFF_FFFF_FFFF; // Mask first 6 bytes
+        self.data_offset_flags = DataOffsetType::from_bits_retain((data_offset >> 48) as u16); // Read last 2 bytes
+        self.total_compressed_size = reader.read_u32::<LE>()?;
+        self.total_uncompressed_size = reader.read_u32::<LE>()?;
+        self.asset_hash = reader.read_i128::<LE>()?;
+        self.tag_id = reader.read_i32::<LE>()?;
+        self.uncompressed_header_size = reader.read_u32::<LE>()?;
+        self.uncompressed_tag_data_size = reader.read_u32::<LE>()?;
+        self.uncompressed_resource_data_size = reader.read_u32::<LE>()?;
+        self.uncompressed_actual_resource_size = reader.read_u32::<LE>()?;
+        self.header_alignment = reader.read_u8()?;
+        self.tag_data_alignment = reader.read_u8()?;
+        self.resource_data_alignment = reader.read_u8()?;
+        self.actual_resource_data_alignment = reader.read_u8()?;
+        reader.seek_relative(1)?;
+        self.unknown = reader.read_u8()?;
+        self.flags = FileEntryFlags::from_bits_truncate(reader.read_u8()?);
+        reader.seek_relative(1)?;
+        Ok(())
+    }
+
+    /// Reads module file entry data for non-[`Flight1`](`ModuleVersion::Flight1`) module versions.
+    ///
+    /// # Arguments
+    ///
+    /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
+    ///
+    /// # Returns
+    ///
+    /// Returns `Ok(())` if read is successful, or an `Error` if reading fails
+    fn read_other<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.unknown = reader.read_u8()?;
         self.flags = FileEntryFlags::from_bits_truncate(reader.read_u8()?);
         self.block_count = reader.read_u16::<LE>()?;
@@ -190,12 +265,9 @@ impl Enumerable for ModuleFileEntry {
         self.parent_index = reader.read_i32::<LE>()?;
         self.asset_hash = reader.read_i128::<LE>()?;
         self.resource_count = reader.read_i32::<LE>()?;
-        reader.seek_relative(4)?; // Skip some padding
         Ok(())
     }
-}
 
-impl ModuleFileEntry {
     /// Reads and loads tag data from a file.
     ///
     /// # Arguments

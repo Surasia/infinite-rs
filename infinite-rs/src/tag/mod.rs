@@ -8,4 +8,3 @@ pub mod loader;
 pub mod reference;
 pub mod structure;
 pub mod types;
-pub mod zoneset;
