@@ -1,5 +1,12 @@
 # infinite-rs Changelog
 
+## 0.7.0 - 2024-12-11
+- Added support for Module versions back to first Technical Preview
+- `ModuleFileEntry` now has a `tag_name` field, filled by either the tag name found in its string list or its tag id. 
+- Zonesets have been removed.
+- Miscellanous internal fixes.
+- `ModuleFile::read_tag` now returns `Option<i32` containing the global tag id of the file being read.
+
 ## 0.6.2 - 2024-12-10
 - Made some fields in `TagHeader` public.
 - Added example `load_scripts`.

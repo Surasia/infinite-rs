@@ -208,7 +208,7 @@ impl ModuleFileEntry {
         self.block_count = reader.read_u16::<LE>()?;
         self.resource_index = reader.read_i32::<LE>()?;
         self.block_index = reader.read_i32::<LE>()?;
-        self.tag_group = reader.read_fixed_string(5)?.chars().rev().collect(); // Reverse string
+        self.tag_group = reader.read_fixed_string(4)?.chars().rev().collect(); // Reverse string
         let data_offset = reader.read_u64::<LE>()?;
         self.data_offset = data_offset & 0x0000_FFFF_FFFF_FFFF; // Mask first 6 bytes
         self.data_offset_flags = DataOffsetType::from_bits_retain((data_offset >> 48) as u16); // Read last 2 bytes

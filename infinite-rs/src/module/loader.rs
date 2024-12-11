@@ -80,7 +80,7 @@ impl ModuleFile {
         // For files from modules that do not contain strings, we simply use the `tag_id` property.
         let strings_offset = reader.stream_position()?;
         for file in &mut self.files {
-            if self.header.version < ModuleVersion::Season3 {
+            if self.header.version <= ModuleVersion::CampaignFlight {
                 reader.seek(SeekFrom::Start(
                     strings_offset + u64::from(file.name_offset),
                 ))?;
@@ -138,7 +138,10 @@ impl ModuleFile {
         }
         if file.data_offset_flags.contains(DataOffsetType::USE_HD1) {
             if let Some(ref mut module_file) = self.hd1_file {
-                let offset = self.file_data_offset - self.header.hd1_delta;
+                let mut offset = self.file_data_offset - self.header.hd1_delta;
+                if self.header.version <= ModuleVersion::Season3 {
+                    offset = self.header.hd1_delta;
+                }
                 file.read_tag(module_file, offset, &self.blocks)?;
             }
         } else if let Some(ref mut module_file) = self.module_file {

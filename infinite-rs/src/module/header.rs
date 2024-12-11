@@ -18,11 +18,11 @@ pub enum ModuleVersion {
     Flight1 = 48,
     /// Second technical preview (August 2021) and release version from November 2021.
     Release = 51,
-    /// Build from March 2023, which introduced notable changes to the module structure.
-    Season3 = 52,
+    /// Build used in the co-op campaign flight, which introduced notable changes to the module structure.
+    CampaignFlight = 52,
     #[default]
-    /// Builds from after January 2024 (CU29). Identical to Season 3.
-    ContentUpdates = 53,
+    /// Builds from Season 3 and onwards.
+    Season3 = 53,
 }
 
 #[derive(Default, Debug)]
@@ -100,7 +100,7 @@ impl ModuleHeader {
         self.build_version = reader.read_u64::<LE>()?;
         self.hd1_delta = reader.read_u64::<LE>()?;
         self.data_size = reader.read_u64::<LE>()?;
-        if self.version != ModuleVersion::Flight1 {
+        if self.version >= ModuleVersion::Release {
             reader.seek_relative(8)?; // Not needed for now.
         }
         Ok(())
