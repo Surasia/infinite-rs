@@ -17,19 +17,19 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         profile: ["release", "dev"]
-    steps:
-      - name: Check semver
-        uses: obi1kenobi/cargo-semver-checks-action@v2.6
-      
-      - name: Install latest rust toolchain
-        run: rustup toolchain install stable --profile minimal
-
-      - name: Cache cargo dependencies
-        uses: Swatinem/rust-cache@v2.7.5
-      
+    steps:      
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Install latest rust toolchain
+        run: rustup toolchain install stable --profile minimal
+
+      - name: Check semver
+        uses: obi1kenobi/cargo-semver-checks-action@v2.6
+
+      - name: Cache cargo dependencies
+        uses: Swatinem/rust-cache@v2.7.5
       
       - name: Build
         run: cargo build --verbose --profile ${{ matrix.profile }}
