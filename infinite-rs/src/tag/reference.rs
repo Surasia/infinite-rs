@@ -10,15 +10,18 @@ use crate::Result;
 /// Structure that defines a reference to a tag.
 pub struct TagReference {
     /// The index of the data block containing the tag field.
-    field_block: i32,
+    pub field_block: i32,
     /// The offset of the tag data block containing the referenced data.
     /// Can be -1 for null references.
-    field_offset: u32,
-    /// The offset of the tag file name inside the module string table.
-    name_offset: u32,
+    pub field_offset: u32,
+    /// The offset of the tag file name inside the tag string table.
+    pub(crate) name_offset: u32,
     /// The index of the tag dependency in the tag dependency list.
     /// Can be -1 for null tag references.
-    dependency_index: i32,
+    pub dependency_index: i32,
+    /// Tag name of the reference, located at the position of the [`Self::name_offset`] in the tag string table.
+    /// This only contains values before Season 3.
+    pub name: Option<String>,
 }
 
 impl Enumerable for TagReference {

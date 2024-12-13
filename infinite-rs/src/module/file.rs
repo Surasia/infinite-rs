@@ -161,7 +161,7 @@ pub struct ModuleFileEntry {
     /// The actual tag file read from the contents (including header), only valid if file is not a resource.
     pub tag_info: Option<TagFile>,
     /// Indicates if file is cached (has data stream) or not.
-    is_loaded: bool,
+    pub is_loaded: bool,
     /// Name of the tag as specified in the module string list.
     /// Set to tag id if module version does not support names.
     pub tag_name: String,
@@ -275,6 +275,7 @@ impl ModuleFileEntry {
     /// * `reader` -  A mutable reference to a [`BufReader<File>`] from which to read the data.
     /// * `data_offset` - Starting offset in bytes of the data in the file.
     /// * `blocks` - Metadata for data blocks.
+    /// * `module_version` - Version of the module being read
     ///
     /// # Returns
     ///
@@ -285,6 +286,7 @@ impl ModuleFileEntry {
         reader: &mut BufReader<File>,
         data_offset: u64,
         blocks: &[ModuleBlockEntry],
+        module_version: &ModuleVersion,
     ) -> Result<()> {
         if self.is_loaded {
             return Ok(());
@@ -303,10 +305,10 @@ impl ModuleFileEntry {
 
         let data_stream = BufReader::new(Cursor::new(data));
         self.data_stream = Some(data_stream);
-        if self.tag_id != -1 {
+        if !self.flags.contains(FileEntryFlags::RAW_FILE) {
             let mut tagfile = TagFile::default();
             if let Some(ref mut stream) = self.data_stream {
-                tagfile.read(stream)?;
+                tagfile.read(stream, module_version)?;
             }
             self.tag_info = Some(tagfile);
         }

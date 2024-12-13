@@ -1,5 +1,11 @@
 # infinite-rs Changelog
 
+## 0.7.2 - 2024-12-13
+- `ModuleFileEntry` now reads tag info if file is not raw.
+- `read_tag` and `read_tag_from_id` now return `None` if the file is to be read from HD1 and the HD1 stream is not available.
+- `TagDependency` and `TagReference` now have `name` fields read from a tag's string table before season 3.
+- `tag_name` field in `ModuleFileEntry` now represents resource files and extensions properly for post-season 3 modules.
+
 ## 0.7.1 - 2024-12-13
 - Made `header` field of `ModuleFile` public.
 

@@ -33,7 +33,7 @@ pub struct TagHeader {
     pub tag_reference_count: u32,
     /// Size in bytes of string table inside tag.
     /// Unused after Halo 5.
-    string_table_size: u32,
+    pub string_table_size: u32,
     /// Size in bytes of "zoneset" section of tag.
     /// Unknown use.
     pub zoneset_size: u32,

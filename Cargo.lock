@@ -115,7 +115,7 @@ dependencies = [
 
 [[package]]
 name = "infinite-rs"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "bitflags",
  "byteorder",

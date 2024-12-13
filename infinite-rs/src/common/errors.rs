@@ -59,6 +59,10 @@ pub enum TagError {
     /// Failed to convert primitive to enum in [`common_types`](`crate::tag::types::common_types`).
     #[error("Failed to convert primitive to enum")]
     NumEnumError,
+    /// Recursion depth reached 3 when trying to get tag path.
+    /// This should never ever happen, if it has, something has gone very wrong.
+    #[error("Recursion depth reached 3!")]
+    RecursionDepth,
 }
 
 #[derive(Error, Debug)]

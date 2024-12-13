@@ -7,6 +7,7 @@ use super::{
     header::TagHeader, reference::TagReference, structure::TagStruct,
 };
 use crate::common::extensions::BufReaderExt;
+use crate::module::header::ModuleVersion;
 use crate::Result;
 
 #[derive(Default, Debug)]
@@ -27,16 +28,16 @@ pub struct TagFile {
 }
 
 impl TagFile {
-    /// Reads the tag fike from the given readers implementing [`BufReaderExt`].
+    /// Reads the tag file from the given readers implementing [`BufReaderExt`].
     /// # Arguments
     ///
     /// * `reader` - A mutable reference to a reader that implements [`BufReaderExt`] from which to read the data.
-    ///
+    /// * `module_version` - Version of the module being read
     /// # Returns
     ///
     /// Returns `Ok(())` if the header is successfully read, or an [`Error`](`crate::Error`) if an I/O error occurs
     /// or if the header data is invalid.
-    pub fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
+    pub fn read<R: BufReaderExt>(&mut self, reader: &mut R, version: &ModuleVersion) -> Result<()> {
         self.header.read(reader)?;
         self.dependencies =
             reader.read_enumerable::<TagDependency>(u64::from(self.header.dependency_count))?;
@@ -52,6 +53,24 @@ impl TagFile {
 
         self.tag_references =
             reader.read_enumerable::<TagReference>(u64::from(self.header.tag_reference_count))?;
+
+        let string_table_position = reader.stream_position()?;
+
+        // This is only valid before Season 3.
+        if version < &ModuleVersion::Season3 {
+            for dep in &mut self.dependencies {
+                reader.seek(SeekFrom::Start(
+                    string_table_position + u64::from(dep.name_offset),
+                ))?;
+                dep.name = Some(reader.read_null_terminated_string()?);
+            }
+            for reference in &mut self.tag_references {
+                reader.seek(SeekFrom::Start(
+                    string_table_position + u64::from(reference.name_offset),
+                ))?;
+                reference.name = Some(reader.read_null_terminated_string()?);
+            }
+        }
         // Ensure that tag data starts where it is supposed to.
         reader.seek(SeekFrom::Start(u64::from(self.header.header_size)))?;
         Ok(())

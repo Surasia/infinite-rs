@@ -5,6 +5,7 @@ use std::{
     fs::File,
     io::{BufReader, Seek, SeekFrom},
     path::Path,
+    ptr::eq,
 };
 
 use super::{
@@ -12,8 +13,11 @@ use super::{
     file::{DataOffsetType, ModuleFileEntry},
     header::{ModuleHeader, ModuleVersion},
 };
-use crate::common::extensions::BufReaderExt;
 use crate::Result;
+use crate::{
+    common::{errors::TagError, extensions::BufReaderExt},
+    Error,
+};
 
 #[derive(Default, Debug)]
 /// Module structure which contains the layout of the entire module file.
@@ -77,16 +81,22 @@ impl ModuleFile {
         // Each entry is seperated by a null terminator, and files specify their offset themselves
         // in no particular order, so we cannot pre-read and just index into them.
         //
-        // For files from modules that do not contain strings, we simply use the `tag_id` property.
+        // For files from modules that do not contain strings, we get it from the `get_tag_path` function.
         let strings_offset = reader.stream_position()?;
-        for file in &mut self.files {
-            if self.header.version <= ModuleVersion::CampaignFlight {
+        if self.header.version <= ModuleVersion::CampaignFlight {
+            for file in &mut self.files {
                 reader.seek(SeekFrom::Start(
                     strings_offset + u64::from(file.name_offset),
                 ))?;
                 file.tag_name = reader.read_null_terminated_string()?;
-            } else {
-                file.tag_name = file.tag_id.to_string();
+            }
+        } else {
+            let tag_paths: Vec<String> = (0..self.files.len())
+                .map(|i| self.get_tag_path(i, 0))
+                .collect::<Result<Vec<_>>>()?;
+
+            for (file, tag_path) in self.files.iter_mut().zip(tag_paths) {
+                file.tag_name = tag_path;
             }
         }
 
@@ -116,12 +126,45 @@ impl ModuleFile {
         Ok(())
     }
 
+    fn get_tag_path(&self, index: usize, depth: usize) -> Result<String> {
+        if depth > 3 {
+            return Err(Error::TagError(TagError::RecursionDepth));
+        }
+        let file = &self.files[index];
+        if file.tag_name == "-1" && file.parent_index != -1 {
+            let parent = &self.files[usize::try_from(file.parent_index)?];
+            let child_index = self.resource_indices[usize::try_from(parent.resource_index)?
+                ..usize::try_from(parent.resource_index)?
+                    + usize::try_from(parent.resource_count)?]
+                .iter()
+                .map(|&i| &self.files[i as usize])
+                .take_while(|&item| !eq(item, file))
+                .count();
+
+            if parent.tag_name == "-1" {
+                let parent_path =
+                    self.get_tag_path(usize::try_from(file.parent_index)?, depth + 1)?;
+                Ok(format!("{parent_path}[{child_index}:resource]"))
+            } else {
+                Ok(format!(
+                    "{}/{}.{}[{}:resource]",
+                    parent.tag_group, parent.tag_name, parent.tag_group, child_index
+                ))
+            }
+        } else if file.tag_id != -1 {
+            Ok(format!(
+                "{}/{}.{}",
+                file.tag_group, file.tag_id, file.tag_group
+            ))
+        } else {
+            Ok(file.tag_id.to_string())
+        }
+    }
+
     /// Reads a specific tag from the module file.
     ///
     /// This function reads a specific tag from the module file based on the provided index.
-    /// It checks if the tag is not a resource tag (indicated by a [`tag_id`](`super::file::ModuleFileEntry::tag_id`) of -1) and then reads
-    /// the tag data from the module file. It also utilizes the HD1 stream if the file entry has
-    /// the flag set for it and the stream is loaded.
+    /// It also utilizes the HD1 stream if the file entry has the flag set for it and the stream is loaded, and returns `None` if the tag offset is invalid.
     ///
     /// # Arguments
     ///
@@ -142,10 +185,17 @@ impl ModuleFile {
                 if self.header.version <= ModuleVersion::Season3 {
                     offset = self.header.hd1_delta;
                 }
-                file.read_tag(module_file, offset, &self.blocks)?;
+                file.read_tag(module_file, offset, &self.blocks, &self.header.version)?;
+            } else {
+                return Ok(None);
             }
         } else if let Some(ref mut module_file) = self.module_file {
-            file.read_tag(module_file, self.file_data_offset, &self.blocks)?;
+            file.read_tag(
+                module_file,
+                self.file_data_offset,
+                &self.blocks,
+                &self.header.version,
+            )?;
         }
         Ok(Some(file.tag_id))
     }
@@ -164,12 +214,16 @@ impl ModuleFile {
     /// # Returns
     ///
     /// Returns the index of the file if successful, wrapped in `Some(usize)`. If the tag is not
-    /// found, it returns [`None`]. Any I/O error encountered during the operation is also returned
+    /// found or couldn't be read, it returns [`None`]. Any I/O error encountered during the operation is also returned
     /// if it occurs.
     pub fn read_tag_from_id(&mut self, global_id: i32) -> Result<Option<usize>> {
         if let Some(index) = self.files.iter().position(|file| file.tag_id == global_id) {
-            self.read_tag(u32::try_from(index)?)?;
-            Ok(Some(index))
+            let has_read = self.read_tag(u32::try_from(index)?)?;
+            if has_read.is_some() {
+                Ok(Some(index))
+            } else {
+                Ok(None)
+            }
         } else {
             Ok(None)
         }

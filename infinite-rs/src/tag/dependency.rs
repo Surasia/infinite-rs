@@ -13,9 +13,9 @@ pub struct TagDependency {
     /// * `bitm`: Bitmap
     /// * `mat `: Material
     pub tag_group: String,
-    /// Offset in global string table where the name of the tag is stored.
-    /// This is no longer valid as of module version 52
-    name_offset: u32,
+    /// Offset in tag string table where the name of the tag is stored.
+    /// Only works before Season 3.
+    pub(super) name_offset: u32,
     /// Higher significant of `MurmurHash3_x86_64` 128 bit hash of raw tag path (before cache compilation).
     pub asset_id: u64,
     /// `MurmurHash3_x86_64` 32 bit hash of tag path.
@@ -24,6 +24,9 @@ pub struct TagDependency {
     pub tag_id: i32,
     /// Index of parent in module.
     pub parent_index: i32,
+    /// Tag name of the dependency, located at the position of the [`Self::name_offset`] in the tag string table.
+    /// This only contains values before Season 3.
+    pub name: Option<String>,
 }
 
 impl Enumerable for TagDependency {
