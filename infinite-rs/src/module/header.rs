@@ -34,9 +34,9 @@ pub struct ModuleHeader {
     /// This determines how offsets are calculated and if tag names should be read.
     pub version: ModuleVersion,
     /// Unique identifier of module.
-    module_id: i64,
+    pub module_id: i64,
     /// Number of files in the module.
-    pub(super) file_count: u32,
+    pub file_count: u32,
     /// Unknown: not in all modules.
     manifest0_count: u32,
     /// Unknown: present in most modules.

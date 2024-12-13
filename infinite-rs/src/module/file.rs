@@ -146,7 +146,7 @@ pub struct ModuleFileEntry {
     /// Power of 2 to align the actual resource data buffer to.
     actual_resource_data_alignment: u8,
     /// Offset where the name of the file is located in the string table.
-    /// This is not read after [`ModuleVersion::Season3`](crate::module::header::ModuleVersion::Season3).
+    /// This is not read after [`ModuleVersion::Season3`].
     pub(crate) name_offset: u32,
     /// Used with resources to point back to the parent file. -1 = none
     pub parent_index: i32,

@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.7.1 - 2024-12-13
+- Made `header` field of `ModuleFile` public.
+
 ## 0.7.0 - 2024-12-11
 - Added support for Module versions back to first Technical Preview
 - `ModuleFileEntry` now has a `tag_name` field, filled by either the tag name found in its string list or its tag id. 

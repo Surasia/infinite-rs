@@ -19,7 +19,7 @@ use crate::Result;
 /// Module structure which contains the layout of the entire module file.
 pub struct ModuleFile {
     /// Information relating to how the other fields should be read.
-    header: ModuleHeader,
+    pub header: ModuleHeader,
     /// Metadata regarding compression and layout of files (tags).
     pub files: Vec<ModuleFileEntry>,
     /// Indices of resource files present in the module.
