@@ -53,7 +53,8 @@ fn main() -> infinite_rs::Result<()> {
                 .tag_name
                 .replace(" ", "_")
                 .replace("*", "_")
-                .replace(r"\", "/");
+                .replace(r"\", "/")
+                .replace(":", "_");
             let path = PathBuf::from(&args.output_path).join(tag_path);
             create_dir_all(path.parent().unwrap())?;
             let filee = File::create(path)?;
