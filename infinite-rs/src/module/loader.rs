@@ -78,7 +78,7 @@ impl ModuleFile {
             self.files.push(file);
         }
         // Read strings contained in the file. A stringlist only exists in files before Season 3.
-        // Each entry is seperated by a null terminator, and files specify their offset themselves
+        // Each entry is separated by a null terminator, and files specify their offset themselves
         // in no particular order, so we cannot pre-read and just index into them.
         //
         // For files from modules that do not contain strings, we get it from the `get_tag_path` function.

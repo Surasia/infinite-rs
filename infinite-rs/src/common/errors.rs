@@ -88,16 +88,16 @@ pub enum Error {
     #[error("Incorrect UTF-8 encoding found when reading string!")]
     Utf8ReadingError(#[from] FromUtf8Error),
     /// Kraken decompression error.
-    #[error("Error occured while decompressing!")]
+    #[error("Error occurred while decompressing!")]
     DecompressionError(#[from] DecompressionError),
     /// Module file loading error.
-    #[error("Error occured while loading a module!")]
+    #[error("Error occurred while loading a module!")]
     ModuleError(#[from] ModuleError),
     /// Integer type conversion error.
     #[error("Integer conversion failed!")]
     TryFromIntError(#[from] TryFromIntError),
     /// Tag file loading error.
-    #[error("Error occured while loading a tag!")]
+    #[error("Error occurred while loading a tag!")]
     TagError(#[from] TagError),
 }
 

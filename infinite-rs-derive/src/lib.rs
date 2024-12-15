@@ -52,7 +52,7 @@ fn tag_structure_derive2(
         panic!("TagStructure can only be derived for structs")
     };
 
-    let (field_nam, field_offset): (Vec<String>, Vec<u64>) = field_attributes
+    let (name, field_offset): (Vec<String>, Vec<u64>) = field_attributes
         .clone()
         .into_iter()
         .map(|(field, attrs)| (field, attrs.offset))
@@ -98,7 +98,7 @@ fn tag_structure_derive2(
             }
 
             fn offsets(&self) -> std::collections::HashMap<&'static str, u64> {
-                let field_names = [#(#field_nam),*];
+                let field_names = [#(#name),*];
                 let field_offsets = [#(#field_offset),*];
 
                 let map: std::collections::HashMap<&'static str, u64> = field_names.iter().zip(field_offsets.iter()).map(|(&name, &offset)| (name, offset)).collect();

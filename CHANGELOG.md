@@ -16,7 +16,7 @@
 - Added support for Module versions back to first Technical Preview
 - `ModuleFileEntry` now has a `tag_name` field, filled by either the tag name found in its string list or its tag id. 
 - Zonesets have been removed.
-- Miscellanous internal fixes.
+- Miscellaneous internal fixes.
 - `ModuleFile::read_tag` now returns `Option<i32` containing the global tag id of the file being read.
 
 ## 0.6.2 - 2024-12-10
@@ -72,7 +72,7 @@
 - Added support for loading custom tag structures
 - Added new derive macro crate to generate tag structures
 - Field blocks can now be read properly
-- Miscellanous changes and improvements.
+- Miscellaneous changes and improvements.
 
 ## 0.3.1 - 2024-10-21
 - Resource tags can now be read using ModuleFile::read_tag.
