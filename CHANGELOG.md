@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.7.3 - 2024-12-15
+- Fixed edge case where `psod` tags would fail to read dependency list. 
+
 ## 0.7.2 - 2024-12-13
 - `ModuleFileEntry` now reads tag info if file is not raw.
 - `read_tag` and `read_tag_from_id` now return `None` if the file is to be read from HD1 and the HD1 stream is not available.

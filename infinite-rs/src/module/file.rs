@@ -308,7 +308,12 @@ impl ModuleFileEntry {
         if !self.flags.contains(FileEntryFlags::RAW_FILE) {
             let mut tagfile = TagFile::default();
             if let Some(ref mut stream) = self.data_stream {
-                tagfile.read(stream, module_version)?;
+                if self.tag_group == "psod" {
+                    // HACK:: "psod" tags do not have string tables in any version.
+                    tagfile.read(stream, &ModuleVersion::Season3)?;
+                } else {
+                    tagfile.read(stream, module_version)?;
+                }
             }
             self.tag_info = Some(tagfile);
         }
