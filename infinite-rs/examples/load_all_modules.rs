@@ -1,12 +1,14 @@
+use std::path::Path;
+
 use bitflags::bitflags;
 use infinite_rs::tag::types::common_types::{
     AnyTag, FieldBlock, FieldByteFlags, FieldCharEnum, FieldLongEnum, FieldReference, FieldStringId,
 };
-use infinite_rs::ModuleFile;
+use infinite_rs::{ModuleFile, Result};
 use infinite_rs_derive::TagStructure;
 use num_enum::TryFromPrimitive;
 
-fn load_modules(deploy_path: String) -> infinite_rs::Result<Vec<ModuleFile>> {
+fn load_modules<R: AsRef<Path>>(deploy_path: R) -> Result<Vec<ModuleFile>> {
     let mut modules = Vec::new();
     for entry in walkdir::WalkDir::new(deploy_path)
         .into_iter()
@@ -15,17 +17,8 @@ fn load_modules(deploy_path: String) -> infinite_rs::Result<Vec<ModuleFile>> {
         if entry.file_type().is_file() {
             let file_path = entry.path().to_str().unwrap();
             if file_path.ends_with(".module") {
-                let module = ModuleFile::from_path(file_path);
-                match module {
-                    Ok(_) => {
-                        modules.push(module?);
-                        println!("Read module: {}", file_path);
-                    }
-                    Err(err) => {
-                        println!("Failed on file: {}", file_path);
-                        return Err(err);
-                    }
-                };
+                let module = ModuleFile::from_path(file_path)?;
+                modules.push(module);
             }
         }
     }
@@ -152,27 +145,21 @@ struct MaterialTag {
     style_info: FieldBlock<MaterialStyleInfo>,
 }
 
-fn main() -> infinite_rs::Result<()> {
-    let mut pc_modules =
-        load_modules(String::from("C:/XboxGames/Halo Infinite/Content/deploy/pc"))?;
-
-    let mut any_modules = load_modules(String::from(
-        "C:/XboxGames/Halo Infinite/Content/deploy/any",
-    ))?;
-
-    let mut modules = pc_modules.iter_mut().chain(any_modules.iter_mut());
+fn main() -> Result<()> {
+    let mut modules = load_modules(String::from("C:/XboxGames/Halo Infinite/Content/deploy/"))?;
 
     for module in &mut modules {
         for index in 0..module.files.len() {
-            module.read_tag(index as u32)?;
-            let tag = &mut module.files[index];
-            if tag.tag_group == "mat " {
-                let mut mat = MaterialTag::default();
-                tag.read_metadata(&mut mat)?;
+            let tag = module.read_tag(index as u32)?;
+            if let Some(tag) = tag {
+                if tag.tag_group == "mat " {
+                    let mut mat = MaterialTag::default();
+                    tag.read_metadata(&mut mat)?;
+                }
+                // explicitly drop buffer to free up memory
+                // normally, can take 50+ GBs of RAM
+                module.files[index].data_stream = None
             }
-            // explicitly drop buffer to free up memory
-            // normally, can take 50+ GBs of RAM
-            module.files[index].data_stream = None
         }
     }
     Ok(())

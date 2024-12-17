@@ -29,49 +29,43 @@ extern "C" {
 /// Offset of `compressed_buffer` after the compressed data has been read, or -1 if decompression has failed.
 ///
 /// # Errors
-///
-/// This function will return a [`DecompressionError`] if:
-/// - The length of `compressed_buffer` or `size` cannot be converted to [`i64`].
-/// - The decompression fails as indicated by a negative result from [`Kraken_Decompress`].
-/// - The resulting decompressed size exceeds the buffer length.
+/// - If the decompression fails [`DecompressionError::DecompressionFailed`]
+/// - If the decompressed buffer size exceeds the maximum size of [`i32`] [`DecompressionError::BufferSizeOverflow`]
+/// - If the decompressed buffer size exceeds the maximum size of [`usize`] [`DecompressionError::BufferSizeOverflow`]
 ///
 /// # Safety
 ///
 /// This function is unsafe because it calls an external C function [`Kraken_Decompress`] which operates on raw pointers.
 /// The caller must ensure that the `compressed_buffer` and `output_buffer` are valid and properly sized.
-pub fn decompress(
+pub unsafe fn decompress(
     compressed_buffer: &[u8],
     output_buffer: &mut Vec<u8>,
     size: usize,
 ) -> Result<i32> {
     let mut buffer = vec![0; size + 8]; // HACK: Ensures that pointer for memory buffer is aligned.
-    let result;
+    let result = Kraken_Decompress(
+        compressed_buffer.as_ptr(),
+        compressed_buffer.len(),
+        buffer.as_mut_ptr(),
+        size,
+    );
 
-    unsafe {
-        result = Kraken_Decompress(
-            compressed_buffer.as_ptr(),
-            compressed_buffer.len(),
-            buffer.as_mut_ptr(),
-            size,
-        );
-
-        if result < 0 {
-            return Err(Error::DecompressionError(
-                DecompressionError::DecompressionFailed(result),
-            ));
-        }
-
-        let result_usize = usize::try_from(result)
-            .map_err(|_| Error::DecompressionError(DecompressionError::BufferSizeOverflow))?;
-
-        if result_usize > buffer.len() {
-            return Err(Error::DecompressionError(
-                DecompressionError::BufferSizeOverflow,
-            ));
-        }
-
-        buffer.resize(result_usize, 0);
-        *output_buffer = buffer;
+    if result < 0 {
+        return Err(Error::DecompressionError(
+            DecompressionError::DecompressionFailed(result),
+        ));
     }
+
+    let result_usize = usize::try_from(result)
+        .map_err(|_| Error::DecompressionError(DecompressionError::BufferSizeOverflow))?;
+
+    if result_usize > buffer.len() {
+        return Err(Error::DecompressionError(
+            DecompressionError::BufferSizeOverflow,
+        ));
+    }
+
+    buffer.resize(result_usize, 0);
+    *output_buffer = buffer;
     Ok(result)
 }

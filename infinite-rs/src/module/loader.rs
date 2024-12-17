@@ -41,12 +41,7 @@ pub struct ModuleFile {
 }
 
 impl ModuleFile {
-    /// Instantiates a default [`ModuleFile`] object.
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
+    /// Instantiates a [`ModuleFile`] object from the given file path.
     pub fn from_path<T: AsRef<Path>>(file_path: T) -> Result<Self> {
         let mut module = Self::default();
         module.read(file_path)?;
@@ -61,10 +56,9 @@ impl ModuleFile {
     ///
     /// * `file_path` - A reference to a type that implements [`Path`] that holds the path to the module file.
     ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if the read operation is successful, or an [`Error`](`crate::Error`) containing
-    /// the I/O error if any reading operation fails.
+    /// # Errors
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
+    /// - If the string table has invalid UTF-8 [`Utf8ReadingError`](`crate::Error::Utf8ReadingError`)
     pub fn read<T: AsRef<Path>>(&mut self, file_path: T) -> Result<()> {
         let file = File::open(&file_path)?;
         let mut reader = BufReader::new(file);
@@ -114,6 +108,7 @@ impl ModuleFile {
         Ok(())
     }
 
+    /// Opens the HD1 file if it exists.
     fn open_hd1<T: AsRef<Path>>(&mut self, file_path: T) -> Result<()> {
         if self.header.hd1_delta != 0 {
             let hd1 = file_path.as_ref().join("_hd1");
@@ -126,6 +121,17 @@ impl ModuleFile {
         Ok(())
     }
 
+    /// Gets the tag path of a file entry.
+    ///
+    /// This function returns the tag path of a file entry based on the provided index.
+    /// For file entries that have a parent, the function recursively gets the tag path of the parent and appends the child index to the path.
+    ///
+    /// # Arguments
+    /// * `index` - The index of the file entry to get the tag path from.
+    /// * `depth` - The depth of the recursion. This is used to prevent infinite recursion.
+    ///
+    /// # Returns
+    /// Returns the tag path of the file entry if the operation is successful.
     fn get_tag_path(&self, index: usize, depth: usize) -> Result<String> {
         if depth > 3 {
             return Err(Error::TagError(TagError::RecursionDepth));
@@ -173,11 +179,12 @@ impl ModuleFile {
     ///
     /// # Returns
     ///
-    /// Returns `Some(i32))` containing the [`tag_id`](`ModuleFileEntry::tag_id`) of the file if the read operation is successful, or an [`Error`](`crate::Error`), a [`None`] if the file was not read (if tag offset is specified as invalid) or the containing the I/O error if any reading operation fails.
-    pub fn read_tag(&mut self, index: u32) -> Result<Option<i32>> {
+    /// Returns a mutable reference to the file if the read operation is successful, or an [`Error`](`crate::Error`), a [`None`] if the file was not read (if tag offset is specified as invalid) or the containing the I/O error if any reading operation fails.
+    pub fn read_tag(&mut self, index: u32) -> Result<Option<&mut ModuleFileEntry>> {
         let file = &mut self.files[index as usize];
-        if file.data_offset_flags.contains(DataOffsetType::INVALID) {
-            return Ok(None);
+        if file.data_offset_flags.contains(DataOffsetType::DEBUG) {
+            return Ok(None); // Currently not reading debug modules because we don't have an
+                             // example.
         }
         if file.data_offset_flags.contains(DataOffsetType::USE_HD1) {
             if let Some(ref mut module_file) = self.hd1_file {
@@ -197,7 +204,7 @@ impl ModuleFile {
                 &self.header.version,
             )?;
         }
-        Ok(Some(file.tag_id))
+        Ok(Some(file))
     }
 
     /// Searches for the index of the tag given the `global_id`.
@@ -213,14 +220,14 @@ impl ModuleFile {
     ///
     /// # Returns
     ///
-    /// Returns the index of the file if successful, wrapped in `Some(usize)`. If the tag is not
+    /// Returns a mutable reference to the file if successful. If the tag is not
     /// found or couldn't be read, it returns [`None`]. Any I/O error encountered during the operation is also returned
     /// if it occurs.
-    pub fn read_tag_from_id(&mut self, global_id: i32) -> Result<Option<usize>> {
+    pub fn read_tag_from_id(&mut self, global_id: i32) -> Result<Option<&mut ModuleFileEntry>> {
         if let Some(index) = self.files.iter().position(|file| file.tag_id == global_id) {
             let has_read = self.read_tag(u32::try_from(index)?)?;
-            if has_read.is_some() {
-                Ok(Some(index))
+            if let Some(tag) = has_read {
+                Ok(Some(tag))
             } else {
                 Ok(None)
             }

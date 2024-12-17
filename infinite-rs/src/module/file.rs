@@ -80,8 +80,8 @@ bitflags! {
         const USE_SELF = 0;
         /// Additional HD1 module is required.
         const USE_HD1 = 0b0000_0001;
-        /// Indicates that this file should not be read.
-        const INVALID = 0b0000_0010;
+        /// Indicates that this file is present in a Debug module.
+        const DEBUG = 0b0000_0010;
     }
 }
 
@@ -175,9 +175,8 @@ impl ModuleFileEntry {
     /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
     /// * `module_version` - Version of the module being read
     ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if read is successful, or an `Error` if reading fails
+    /// # Errors
+    /// - If the reader fails to read the structure [`ReadError`](`crate::Error::ReadError`)
     pub fn read<R: BufReaderExt>(
         &mut self,
         reader: &mut R,
@@ -193,14 +192,6 @@ impl ModuleFileEntry {
     }
 
     /// Reads module file entry data specifically for modules of version [`Flight1`](`ModuleVersion::Flight1`).
-    ///
-    /// # Arguments
-    ///
-    /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
-    ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if read is successful, or an `Error` if reading fails
     fn read_flight1<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.name_offset = reader.read_u32::<LE>()?;
         self.parent_index = reader.read_i32::<LE>()?;
@@ -232,14 +223,6 @@ impl ModuleFileEntry {
     }
 
     /// Reads module file entry data for non-[`Flight1`](`ModuleVersion::Flight1`) module versions.
-    ///
-    /// # Arguments
-    ///
-    /// * `reader` - A mutable reference to a reader implementing [`BufReaderExt`]
-    ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if read is successful, or an `Error` if reading fails
     fn read_other<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()> {
         self.unknown = reader.read_u8()?;
         self.flags = FileEntryFlags::from_bits_truncate(reader.read_u8()?);
@@ -277,10 +260,9 @@ impl ModuleFileEntry {
     /// * `blocks` - Metadata for data blocks.
     /// * `module_version` - Version of the module being read
     ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
-    /// the I/O error if any reading operation fails.
+    /// # Errors
+    /// - If the reader fails to read [`ReadError`](`crate::Error::ReadError`)
+    /// - If any issues arise while reading non-raw tags: [`TagError`](`crate::common::errors::TagError`)
     pub(super) fn read_tag(
         &mut self,
         reader: &mut BufReader<File>,
@@ -334,10 +316,12 @@ impl ModuleFileEntry {
     /// * `file_offset` - The offset in the file where the data blocks start.
     /// * `data` - A mutable slice where the (decompressed) data will be stored.
     ///
-    /// # Returns
+    /// # Errors
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
+    /// - If the block index is negative [`ModuleError::NegativeBlockIndex`]
     ///
-    /// Returns `Ok(())` if the read operation is successful, or an `Error` containing
-    /// the I/O error if any reading operation fails.
+    /// # Safety
+    /// - This function has an unsafe component because it can call the [`read_compressed_block`] function, which uses [`decompress`] which is unsafe.
     #[allow(clippy::cast_sign_loss)]
     fn read_multiple_blocks(
         &self,
@@ -354,9 +338,14 @@ impl ModuleFileEntry {
         let first_block_index = self.block_index as usize;
         reader.seek(SeekFrom::Start(file_offset))?;
 
+        let initial_block_offset = reader.stream_position()?;
         for block in &blocks[first_block_index..(first_block_index + self.block_count as usize)] {
+            // even though blocks are sequential, we still should seek to the correct position.
+            reader.seek(SeekFrom::Start(
+                initial_block_offset + u64::from(block.compressed_offset),
+            ))?;
             if block.is_compressed {
-                read_compressed_block(reader, block, data)?;
+                unsafe { read_compressed_block(reader, block, data)? };
             } else {
                 read_uncompressed_block(reader, block, data)?;
             }
@@ -376,10 +365,11 @@ impl ModuleFileEntry {
     ///
     /// * `struct_type` - A mutable reference to the struct implementing [`TagStructure`] to read the data into.
     ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
-    /// the I/O error if any reading operation fails.
+    /// # Errors
+    /// - If the tag data is not loaded [`TagError::NotLoaded`]
+    /// - If the tag info is not present [`TagError::NoTagInfo`]
+    /// - If the main struct definition is not found [`TagError::MainStructNotFound`]
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
     pub fn read_metadata<T: Default + TagStructure>(&mut self, struct_type: &mut T) -> Result<T> {
         let mut full_tag = Vec::with_capacity(
             self.total_uncompressed_size as usize - self.uncompressed_header_size as usize,
@@ -430,10 +420,8 @@ impl ModuleFileEntry {
 /// * `block` - A reference to the [`ModuleBlockEntry`] containing metadata about the block.
 /// * `data` - A mutable slice where the uncompressed data will be stored.
 ///
-/// # Returns
-///
-/// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
-/// the I/O error if any reading operation fails.
+/// # Errors
+/// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
 fn read_uncompressed_block(
     reader: &mut BufReader<File>,
     block: &ModuleBlockEntry,
@@ -457,11 +445,13 @@ fn read_uncompressed_block(
 /// * `block` - A reference to the [`ModuleBlockEntry`] containing metadata about the block.
 /// * `data` - A mutable slice where the decompressed data will be stored.
 ///
-/// # Returns
+/// # Errors
+/// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
+/// - If the decompression operation fails [`Error::DecompressionError`]
 ///
-/// Returns `Ok(())` if the read operation is successful, or an [`Error`] containing
-/// the I/O error if any reading operation fails.
-fn read_compressed_block(
+/// # Safety
+/// - This function is unsafe because it calls the [`decompress`] function, which is unsafe.
+unsafe fn read_compressed_block(
     reader: &mut BufReader<File>,
     block: &ModuleBlockEntry,
     data: &mut [u8],
@@ -493,10 +483,12 @@ fn read_compressed_block(
 /// * `file_offset` - The offset in the file where the data block starts.
 /// * `data` - A mutable reference to the [`Vec<u8>`] where the (decompressed) data will be stored.
 ///
-/// # Returns
+/// # Errors
+/// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
+/// - If the decompression operation fails [`Error::DecompressionError`]
 ///
-/// Returns `Ok(())` if the read operation is successful, or an [`Error`]    containing
-/// the I/O error if any reading operation fails.
+/// # Safety
+/// - This function can be unsafe because it can call the [`decompress`] function, which is unsafe.
 fn read_single_block(
     reader: &mut BufReader<File>,
     file_entry: &ModuleFileEntry,
@@ -511,7 +503,7 @@ fn read_single_block(
     if compressed_size == file_entry.total_uncompressed_size as usize {
         data.copy_from_slice(&block);
     } else {
-        decompress(&block, data, file_entry.total_uncompressed_size as usize)?;
+        unsafe { decompress(&block, data, file_entry.total_uncompressed_size as usize)? };
     }
     Ok(())
 }

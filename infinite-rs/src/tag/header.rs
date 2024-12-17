@@ -67,12 +67,10 @@ impl TagHeader {
     ///
     /// * `reader` - A mutable reference to a reader that implements [`BufRead`] from which to read the data.
     ///
-    /// # Returns
-    ///
-    /// This function will return an error if:
-    /// * The magic string is not "ucsh"
-    /// * The version is less than or equal to 17
-    /// * Any I/O error occurs while reading
+    /// # Errors
+    /// - If the magic number is not equal to [`HEADER_MAGIC`] [`TagError::IncorrectMagic`]
+    /// - If the version number is not recognized [`TagError::IncorrectVersion`]
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.magic = reader.read_u32::<LE>()?;
         if self.magic != HEADER_MAGIC {

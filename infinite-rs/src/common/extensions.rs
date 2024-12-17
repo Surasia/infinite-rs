@@ -27,10 +27,8 @@ pub trait Enumerable {
     ///
     /// * `reader` - A mutable reference to any type that implements `BufReaderExt`
     ///
-    /// # Returns
-    ///
-    /// * `Ok(())` - If the read operation was successful
-    /// * `Err(Error)` - If an error occurred during reading
+    /// # Errors
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
     fn read<R: BufReaderExt>(&mut self, reader: &mut R) -> Result<()>;
 }
 
@@ -45,10 +43,9 @@ pub trait BufReaderExt: BufRead + Seek {
     ///
     /// * `length` - The exact number of bytes to read
     ///
-    /// # Returns
-    ///
-    /// * `Ok(String)` - The UTF-8 string read from the buffer
-    /// * `Err(Error)` - If reading fails or the bytes are not valid UTF-8
+    /// # Errors
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
+    /// - If the bytes read are not valid UTF-8 [`Utf8ReadingError`](`crate::Error::Utf8ReadingError`)
     ///
     /// # Examples
     ///
@@ -80,10 +77,9 @@ pub trait BufReaderExt: BufRead + Seek {
     /// This function reads bytes in a reader until it hits `0x00` and converts them to a String.
     /// The null terminator is removed from the final output.
     ///
-    /// # Returns
-    ///
-    /// * `Ok(String)` - The UTF-8 string read from the buffer
-    /// * `Err(Error)` - If reading fails or the bytes are not valid UTF-8
+    /// # Errors
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
+    /// - If the bytes read are not valid UTF-8 [`Utf8ReadingError`](`crate::Error::Utf8ReadingError`)
     ///
     /// # Examples
     ///
@@ -121,10 +117,8 @@ pub trait BufReaderExt: BufRead + Seek {
     ///
     /// * `count` - Number of instances to read
     ///
-    /// # Returns
-    ///
-    /// * `Ok(Vec<T>)` - Vector containing the read instances
-    /// * `Err(Error)` - If any read operation fails
+    /// # Errors
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
     ///
     /// # Examples
     ///

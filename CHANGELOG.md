@@ -1,5 +1,12 @@
 # infinite-rs Changelog
 
+## 0.8.0 - 2024-12-17
+- Many improvements to error documentation.
+- `DataOffsetType::INVALID` is now `DataOffsetType::DEBUG`
+- `read_compressed_block` and `decompress` are now marked as unsafe.
+- `manifest0_count`, `manifest1_count`, `manifest2_count` have been renamed to `loadmanifest_index`, `runtimeloadmetadata_index` and `resourcemetadata_index`.
+- `read_tag` and `read_tag_from_id` now return a mutable reference to the file if successful.
+
 ## 0.7.3 - 2024-12-15
 - Fixed edge case where `psod` tags would fail to read dependency list. 
 

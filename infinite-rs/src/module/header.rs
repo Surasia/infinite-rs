@@ -37,12 +37,12 @@ pub struct ModuleHeader {
     pub module_id: i64,
     /// Number of files in the module.
     pub file_count: u32,
-    /// Unknown: not in all modules.
-    manifest0_count: u32,
-    /// Unknown: present in most modules.
-    manifest1_count: u32,
-    /// Unknown: not present in any modules.
-    manifest2_count: u32,
+    /// Index of `loadmanifest` tag, which contains the tag ids that the module will load.
+    loadmanifest_index: i32,
+    /// Index of `runtimeloadmetadata` tag, which contains info on how tags should be loaded at runtime.
+    runtimeloadmetadata_index: i32,
+    /// Index of `resourcemetadata` tag, which contains info on how resources should be loaded.
+    resourcemetadata_index: i32,
     /// Index of the first resource entry ([`file_count`](`ModuleHeader::file_count`) - [`resource_count`](`ModuleHeader::resource_count`)).
     resource_index: i32,
     /// Total size in bytes of the string table.
@@ -69,17 +69,10 @@ impl ModuleHeader {
     ///
     /// * `reader` - A mutable reference to a [`BufReader<File>`] from which to read the data.
     ///
-    /// # Returns
-    ///
-    /// Returns `Ok(())` if the header is successfully read, or an [`Error`] if an I/O error occurs
-    /// or if the header data is invalid.
-    ///
     /// # Errors
-    ///
-    /// This function will return an error if:
-    /// * The magic string is not "mohd"
-    /// * The version is not in the valid range defined by [`ModuleVersion`]
-    /// * Any I/O error occurs while reading
+    /// - If the magic number is not equal to [`HEADER_MAGIC`] [`ModuleError::IncorrectMagic`]
+    /// - If the version number is not recognized [`ModuleError::IncorrectVersion`]
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
     pub(super) fn read(&mut self, reader: &mut BufReader<File>) -> Result<()> {
         self.magic = reader.read_u32::<LE>()?;
         if self.magic != HEADER_MAGIC {
@@ -90,9 +83,9 @@ impl ModuleHeader {
 
         self.module_id = reader.read_i64::<LE>()?;
         self.file_count = reader.read_u32::<LE>()?;
-        self.manifest0_count = reader.read_u32::<LE>()?;
-        self.manifest1_count = reader.read_u32::<LE>()?;
-        self.manifest2_count = reader.read_u32::<LE>()?;
+        self.loadmanifest_index = reader.read_i32::<LE>()?;
+        self.runtimeloadmetadata_index = reader.read_i32::<LE>()?;
+        self.resourcemetadata_index = reader.read_i32::<LE>()?;
         self.resource_index = reader.read_i32::<LE>()?;
         self.strings_size = reader.read_u32::<LE>()?;
         self.resource_count = reader.read_u32::<LE>()?;

@@ -5,7 +5,7 @@ use std::{
 };
 
 use argh::FromArgs;
-use infinite_rs::ModuleFile;
+use infinite_rs::{ModuleFile, Result};
 
 #[derive(FromArgs, Debug)]
 /// Tool that extracts files from modules of any version from Halo Infinite
@@ -18,7 +18,7 @@ struct InfiniteExtract {
     output_path: PathBuf,
 }
 
-fn load_modules<R: AsRef<Path>>(deploy_path: R) -> infinite_rs::Result<Vec<ModuleFile>> {
+fn load_modules<R: AsRef<Path>>(deploy_path: R) -> Result<Vec<ModuleFile>> {
     let mut modules = Vec::new();
     for entry in walkdir::WalkDir::new(deploy_path)
         .into_iter()
@@ -35,7 +35,7 @@ fn load_modules<R: AsRef<Path>>(deploy_path: R) -> infinite_rs::Result<Vec<Modul
     Ok(modules)
 }
 
-fn main() -> infinite_rs::Result<()> {
+fn main() -> Result<()> {
     let args: InfiniteExtract = argh::from_env();
     let mut modules = load_modules(args.deploy_path)?;
     for module in &mut modules {

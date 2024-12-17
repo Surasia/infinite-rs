@@ -24,28 +24,29 @@ fn main() -> Result<()> {
     let mut module = ModuleFile::from_path(DEPLOY_PATH)?;
     for idx in 0..module.files.len() {
         if module.files[idx].tag_group == SCRIPT_GROUP {
-            module.read_tag(idx as u32)?;
-            let mut source = HsSourceFileTag::default();
-            module.files[idx].read_metadata(&mut source)?;
+            let tag = module.read_tag(idx as u32)?;
+            if let Some(tag) = tag {
+                let mut source = HsSourceFileTag::default();
+                tag.read_metadata(&mut source)?;
 
-            let size = module.files[idx].uncompressed_header_size + 0x2D8;
-            let tag_id = module.files[idx].tag_id;
-            let mut server_buf = vec![0; source.server.size as usize];
-            let mut client_buf = vec![0; source.client.size as usize];
+                let size = tag.uncompressed_header_size + 0x2D8;
+                let mut server_buf = vec![0; source.server.size as usize];
+                let mut client_buf = vec![0; source.client.size as usize];
 
-            if let Some(stream) = module.files[idx].data_stream.as_mut() {
-                stream.seek(SeekFrom::Start(size as u64))?;
-                stream.read_exact(&mut server_buf)?;
-                stream.read_exact(&mut client_buf)?;
+                if let Some(stream) = tag.data_stream.as_mut() {
+                    stream.seek(SeekFrom::Start(size as u64))?;
+                    stream.read_exact(&mut server_buf)?;
+                    stream.read_exact(&mut client_buf)?;
+                }
+
+                let server_file = File::create(format!("{SAVE_PATH}/{}_server.luac", tag.tag_id))?;
+                let mut bw = BufWriter::new(server_file);
+                bw.write_all(&server_buf)?;
+
+                let client_file = File::create(format!("{SAVE_PATH}/{}_client.luac", tag.tag_id))?;
+                let mut bw = BufWriter::new(client_file);
+                bw.write_all(&client_buf)?;
             }
-
-            let server_file = File::create(format!("{SAVE_PATH}/{}_server.luac", tag_id))?;
-            let mut bw = BufWriter::new(server_file);
-            bw.write_all(&server_buf)?;
-
-            let client_file = File::create(format!("{SAVE_PATH}/{}_client.luac", tag_id))?;
-            let mut bw = BufWriter::new(client_file);
-            bw.write_all(&client_buf)?;
         }
     }
     Ok(())

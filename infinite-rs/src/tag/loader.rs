@@ -33,10 +33,9 @@ impl TagFile {
     ///
     /// * `reader` - A mutable reference to a reader that implements [`BufReaderExt`] from which to read the data.
     /// * `module_version` - Version of the module being read
-    /// # Returns
     ///
-    /// Returns `Ok(())` if the header is successfully read, or an [`Error`](`crate::Error`) if an I/O error occurs
-    /// or if the header data is invalid.
+    /// # Errors
+    /// - If the reader fails to read the exact number of bytes [`ReadError`](`crate::Error::ReadError`)
     pub fn read<R: BufReaderExt>(&mut self, reader: &mut R, version: &ModuleVersion) -> Result<()> {
         self.header.read(reader)?;
         self.dependencies =
