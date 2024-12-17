@@ -71,12 +71,22 @@ impl ModuleFile {
             file.read(&mut reader, &self.header.version)?;
             self.files.push(file);
         }
+
+        let strings_offset = reader.stream_position()?;
+        reader.seek(SeekFrom::Start(
+            strings_offset + u64::from(self.header.strings_size),
+        ))?;
+        self.resource_indices = (0..self.header.resource_count)
+            .map(|_| -> Result<u32> { Ok(reader.read_u32::<LE>()?) })
+            .collect::<Result<Vec<_>>>()?;
+        let post_resource_offset = reader.stream_position()?;
+
         // Read strings contained in the file. A stringlist only exists in files before Season 3.
         // Each entry is separated by a null terminator, and files specify their offset themselves
         // in no particular order, so we cannot pre-read and just index into them.
         //
         // For files from modules that do not contain strings, we get it from the `get_tag_path` function.
-        let strings_offset = reader.stream_position()?;
+        reader.seek(SeekFrom::Start(strings_offset))?;
         if self.header.version <= ModuleVersion::CampaignFlight {
             for file in &mut self.files {
                 reader.seek(SeekFrom::Start(
@@ -94,9 +104,7 @@ impl ModuleFile {
             }
         }
 
-        self.resource_indices = (0..self.header.resource_count)
-            .map(|_| -> Result<u32> { Ok(reader.read_u32::<LE>()?) })
-            .collect::<Result<Vec<_>>>()?;
+        reader.seek(SeekFrom::Start(post_resource_offset))?;
         self.blocks =
             reader.read_enumerable::<ModuleBlockEntry>(u64::from(self.header.block_count))?;
 
@@ -137,8 +145,9 @@ impl ModuleFile {
             return Err(Error::TagError(TagError::RecursionDepth));
         }
         let file = &self.files[index];
-        if file.tag_name == "-1" && file.parent_index != -1 {
+        if file.tag_id == -1 && file.parent_index != -1 {
             let parent = &self.files[usize::try_from(file.parent_index)?];
+            let mut parent_name: String = String::new();
             let child_index = self.resource_indices[usize::try_from(parent.resource_index)?
                 ..usize::try_from(parent.resource_index)?
                     + usize::try_from(parent.resource_count)?]
@@ -146,24 +155,20 @@ impl ModuleFile {
                 .map(|&i| &self.files[i as usize])
                 .take_while(|&item| !eq(item, file))
                 .count();
-
-            if parent.tag_name == "-1" {
-                let parent_path =
-                    self.get_tag_path(usize::try_from(file.parent_index)?, depth + 1)?;
-                Ok(format!("{parent_path}[{child_index}:resource]"))
-            } else {
-                Ok(format!(
-                    "{}/{}.{}[{}:resource]",
-                    parent.tag_group, parent.tag_name, parent.tag_group, child_index
-                ))
+            if parent.tag_name.is_empty() {
+                parent_name = self.get_tag_path(usize::try_from(file.parent_index)?, depth + 1)?;
             }
-        } else if file.tag_id != -1 {
+            if parent.tag_id == -1 {
+                parent_name = self.get_tag_path(usize::try_from(file.parent_index)?, depth + 1)?;
+                Ok(format!("{parent_name}[{child_index}:block]"))
+            } else {
+                Ok(format!("{parent_name}[{child_index}:resource]"))
+            }
+        } else {
             Ok(format!(
                 "{}/{}.{}",
                 file.tag_group, file.tag_id, file.tag_group
             ))
-        } else {
-            Ok(file.tag_id.to_string())
         }
     }
 

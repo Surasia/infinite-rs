@@ -46,7 +46,7 @@ pub struct ModuleHeader {
     /// Index of the first resource entry ([`file_count`](`ModuleHeader::file_count`) - [`resource_count`](`ModuleHeader::resource_count`)).
     resource_index: i32,
     /// Total size in bytes of the string table.
-    strings_size: u32,
+    pub(super) strings_size: u32,
     /// Number of resource files.
     pub(super) resource_count: u32,
     /// Number of data blocks.

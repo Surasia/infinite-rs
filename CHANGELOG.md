@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.8.1 - 2024-12-17
+- Fixed issues assigning tag names to tags in post-season 3 modules.
+
 ## 0.8.0 - 2024-12-17
 - Many improvements to error documentation.
 - `DataOffsetType::INVALID` is now `DataOffsetType::DEBUG`
