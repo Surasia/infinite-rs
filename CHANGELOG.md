@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.8.3 - 2025-01-07
+- Some fixes to the `derive` feature.
+
 ## 0.8.2 - 2025-01-07
 - Added `get_raw_data` to `ModuleFile` for easier access to data.
 - Updated dependencies.

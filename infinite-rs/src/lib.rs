@@ -10,6 +10,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::module_name_repetitions)]
 #![allow(rustdoc::private_intra_doc_links)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 /*!
 Simple and fast deserialization library for Halo Infinite.
 
@@ -183,4 +184,5 @@ pub use crate::{module::loader::ModuleFile, tag::loader::TagFile};
 extern crate infinite_rs_derive;
 
 #[cfg(feature = "derive")]
+#[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 pub use infinite_rs_derive::TagStructure;

@@ -11,6 +11,7 @@ keywords = ["halo", "halo-infinite", "game-hacking", "reverse-engineering"]
 readme = "README.md"
 license = "Unlicense OR MIT"
 edition = "2021"
+rust-version = "1.80"
 
 [profile.release]
 lto = "fat"
