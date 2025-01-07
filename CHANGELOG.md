@@ -1,5 +1,10 @@
 # infinite-rs Changelog
 
+## 0.8.2 - 2025-01-07
+- Added `get_raw_data` to `ModuleFile` for easier access to data.
+- Updated dependencies.
+- `TagStructure` procmacro is now re-exported by infinite-rs if `derive` feature is enabled.
+
 ## 0.8.1 - 2024-12-17
 - Fixed issues assigning tag names to tags in post-season 3 modules.
 

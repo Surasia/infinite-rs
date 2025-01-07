@@ -121,6 +121,7 @@ fn tag_structure_derive2(
 }
 
 #[proc_macro_derive(TagStructure, attributes(data))]
+/// For implementing Tag Structures as described in documentation.
 pub fn tag_structure_derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     tag_structure_derive2(input.into()).unwrap().into()
 }

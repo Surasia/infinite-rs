@@ -407,6 +407,31 @@ impl ModuleFileEntry {
 
         Ok(T::default())
     }
+
+    /// Reads data from internal buffer into a [`Vec<u8>`].
+    ///
+    /// # Arguments
+    /// - `include_header`: Whether to also include header info making up [`TagFile`]
+    ///
+    /// # Errors
+    /// - If the tag data is not loaded [`TagError::NotLoaded`]
+    /// - If the reader fails to read [`ReadError`](`crate::Error::ReadError`)
+    pub fn get_raw_data(&mut self, include_header: bool) -> Result<Vec<u8>> {
+        if let Some(ref mut data_stream) = self.data_stream {
+            let mut size = self.total_uncompressed_size as usize;
+            if include_header {
+                data_stream.rewind()?;
+            } else {
+                data_stream.seek(SeekFrom::Start(u64::from(self.uncompressed_header_size)))?;
+                size -= self.uncompressed_header_size as usize;
+            }
+            let mut buffer = Vec::with_capacity(size);
+            data_stream.read_to_end(&mut buffer)?;
+            Ok(buffer)
+        } else {
+            Err(Error::TagError(TagError::NotLoaded))
+        }
+    }
 }
 
 /// Reads an uncompressed block of data from the file.
