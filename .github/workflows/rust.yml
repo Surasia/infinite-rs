@@ -29,10 +29,10 @@ jobs:
         uses: obi1kenobi/cargo-semver-checks-action@v2.6
       
       - name: Build
-        run: cargo build --verbose --profile ${{ matrix.profile }}
+        run: cargo build --all-features --verbose --profile ${{ matrix.profile }}
       
       - name: Run tests
-        run: cargo test --verbose --profile ${{ matrix.profile }}
+        run: cargo test --all-features --verbose --profile ${{ matrix.profile }}
       
       - name: Check clippy
         run: cargo clippy --all-targets --all-features
