@@ -60,7 +60,7 @@ To define a structure that can be read from a tag data stream, you must first de
 *Padding between fields is automatically calculated. Any data between two offsets are skipped.*
 
 ```rust
-use infinite_rs_derive::TagStructure;
+use infinite_rs::TagStructure;
 use infinite_rs::tag::types::common_types::{
     AnyTag, FieldReference,
 };
@@ -78,11 +78,10 @@ struct MaterialTag {
 ### Reading structures
 
 ```rust
-use infinite_rs_derive::TagStructure;
 use infinite_rs::tag::types::common_types::{
     AnyTag, FieldReference,
 };
-use infinite_rs::{ModuleFile, Result};
+use infinite_rs::{ModuleFile, Result, TagStructure};
 
 #[derive(Default, Debug, TagStructure)]
 #[data(size(0x88))] // Size can be any u64 value.
@@ -127,8 +126,8 @@ For enums, this requires [`TryFromPrimitive`](`num_enum::TryFromPrimitive`) to b
 For flags, you can use the [`bitflags`] crate.
 
 ```rust
-use infinite_rs_derive::TagStructure;
 use infinite_rs::tag::types::common_types::{FieldShortEnum, FieldWordFlags};
+use infinite_rs::TagStructure;
 use num_enum::TryFromPrimitive;
 use bitflags::bitflags;
 
@@ -179,3 +178,9 @@ pub mod tag;
 pub use crate::common::errors::{Error, Result};
 #[doc(inline)]
 pub use crate::{module::loader::ModuleFile, tag::loader::TagFile};
+
+#[cfg(feature = "derive")]
+extern crate infinite_rs_derive;
+
+#[cfg(feature = "derive")]
+pub use infinite_rs_derive::TagStructure;
