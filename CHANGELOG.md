@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.8.4 - 2025-02-05
+- Fixed resource sections of tags not being read properly.
+
 ## 0.8.3 - 2025-01-07
 - Some fixes to the `derive` feature.
 

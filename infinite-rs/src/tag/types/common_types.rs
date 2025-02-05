@@ -9,6 +9,7 @@ use std::{
 
 use crate::{
     common::errors::{Error, TagError},
+    tag::datablock::TagSectionType,
     Result,
 };
 use crate::{
@@ -735,10 +736,22 @@ impl<T: TagStructure + Debug + Default> FieldBlock<T> {
         if let Some(block_struct) = block_struct {
             #[allow(clippy::cast_sign_loss)]
             let block = &blocks[block_struct.target_index as usize];
+            let mut offset = block.offset;
+
+            // HACK: Calculate offset using other blocks.
+            let tagdata_size = blocks
+                .iter()
+                .filter(|x| x.section_type == TagSectionType::TagData)
+                .map(|x| x.entry_size)
+                .sum::<u32>();
+
+            if block.section_type == TagSectionType::ResourceData {
+                offset = block.offset + u64::from(tagdata_size);
+            }
             let size = T::default().size();
 
             // We first read the object itself without any of its children
-            reader.seek(SeekFrom::Start(block.offset))?;
+            reader.seek(SeekFrom::Start(offset))?;
             for _ in 0..self.size {
                 let mut object = T::default();
                 object.read(reader)?;
