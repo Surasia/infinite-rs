@@ -9,7 +9,10 @@ use thiserror::Error;
 
 use crate::{
     module::header::ModuleVersion,
-    tag::{datablock::TagSectionType, structure::TagStructType},
+    tag::{
+        datablock::TagSectionType,
+        structure::{TagStructLocation, TagStructType},
+    },
 };
 
 #[derive(Error, Debug)]
@@ -63,6 +66,10 @@ pub enum TagError {
     /// This should never ever happen, if it has, something has gone very wrong.
     #[error("Recursion depth reached 3!")]
     RecursionDepth,
+    /// Failed to convert integer to [`TagStructLocation`].
+    /// This error should not occur as [`TagStructLocation`] enum is exhaustive.
+    #[error("Invalid TagStruct location encountered!")]
+    InvalidTagStructLocation(#[from] TryFromPrimitiveError<TagStructLocation>),
 }
 
 #[derive(Error, Debug)]

@@ -25,6 +25,16 @@ pub enum TagStructType {
     Literal,
 }
 
+#[derive(Default, Debug, TryFromPrimitive, PartialEq, Eq)]
+#[repr(u16)]
+/// Enum defining where teh data in the tag struct is pointing towards in a "Custom" tag structure.
+pub enum TagStructLocation {
+    #[default]
+    Internal,
+    Resource,
+    Debug,
+}
+
 #[derive(Default, Debug)]
 /// Structure defining the hierarchical order of info in tags.
 pub struct TagStruct {
@@ -32,8 +42,8 @@ pub struct TagStruct {
     pub guid: u128,
     /// Where the structure is located.
     pub struct_type: TagStructType,
-    /// Unknown (but important)
-    unknown: u16,
+    /// Where the data for the structure is located.
+    pub location: TagStructLocation,
     /// For main struct and tag block structs, the index of the block containing the struct.
     /// For resource structs, index of the resource.
     /// Can be -1 if the tag field doesn't point to anything.
@@ -50,7 +60,8 @@ impl Enumerable for TagStruct {
         self.guid = reader.read_u128::<LE>()?;
         self.struct_type = TagStructType::try_from(reader.read_u16::<LE>()?)
             .map_err(|e| Error::TagError(TagError::InvalidTagStruct(e)))?;
-        self.unknown = reader.read_u16::<LE>()?;
+        self.location = TagStructLocation::try_from(reader.read_u16::<LE>()?)
+            .map_err(|e| Error::TagError(TagError::InvalidTagStructLocation(e)))?;
         self.target_index = reader.read_i32::<LE>()?;
         self.field_block = reader.read_i32::<LE>()?;
         self.field_offset = reader.read_u32::<LE>()?;
