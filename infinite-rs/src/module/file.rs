@@ -393,9 +393,9 @@ impl ModuleFileEntry {
         #[allow(clippy::cast_sign_loss)]
         let main_block: &TagDataBlock =
             &tag_info.datablock_definitions[main_struct.target_index as usize];
-        let full_tag_buffer = &full_tag[usize::try_from(main_block.offset)?..];
+        let full_tag_buffer = &full_tag[0..];
         let mut full_tag_reader = BufReader::new(Cursor::new(full_tag_buffer));
-
+        full_tag_reader.seek(SeekFrom::Current(i64::try_from(main_block.offset)?))?;
         struct_type.read(&mut full_tag_reader)?;
         struct_type.load_field_blocks(
             main_struct.target_index,
@@ -404,7 +404,6 @@ impl ModuleFileEntry {
             &tag_info.struct_definitions[..],
             &tag_info.datablock_definitions[..],
         )?;
-
         Ok(T::default())
     }
 
