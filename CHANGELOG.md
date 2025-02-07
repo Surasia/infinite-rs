@@ -1,6 +1,6 @@
 # infinite-rs Changelog
 
-## 0.8.5 - 2025-02-07
+## 0.9.0 - 2025-02-07
 - Added `TagStructLocation` to `TagStruct`
 - `FieldCharBlockIndex`, `FieldCustomCharBlockIndex`, `FieldShortBlockIndex`, `FieldCustomShortBlockIndex`, `FieldLongBlockIndex`, `FieldCustomLongBlockIndex` are now signed types.
 - Fixed issue with reading blocks that don't start at the first datablock.
