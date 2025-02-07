@@ -572,67 +572,67 @@ impl FieldByteBlockFlags {
 }
 
 #[derive(Default, Debug)]
-/// _2C: Char block index, stores an 8-bit unsigned integer.
-pub struct FieldCharBlockIndex(pub u8);
+/// _2C: Char block index, stores an 8-bit signed integer.
+pub struct FieldCharBlockIndex(pub i8);
 
 impl FieldCharBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
-        self.0 = reader.read_u8()?;
+        self.0 = reader.read_i8()?;
         Ok(())
     }
 }
 
 #[derive(Default, Debug)]
-/// _2D: Custom char block index, stores an 8-bit unsigned integer.
-pub struct FieldCustomCharBlockIndex(pub u8);
+/// _2D: Custom char block index, stores an 8-bit signed integer.
+pub struct FieldCustomCharBlockIndex(pub i8);
 
 impl FieldCustomCharBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
-        self.0 = reader.read_u8()?;
+        self.0 = reader.read_i8()?;
         Ok(())
     }
 }
 
 #[derive(Default, Debug)]
-/// _2E: Short block index, stores a 16-bit unsigned integer.
-pub struct FieldShortBlockIndex(pub u16);
+/// _2E: Short block index, stores a 16-bit signed integer.
+pub struct FieldShortBlockIndex(pub i16);
 
 impl FieldShortBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
-        self.0 = reader.read_u16::<LE>()?;
+        self.0 = reader.read_i16::<LE>()?;
         Ok(())
     }
 }
 
 #[derive(Default, Debug)]
-/// _2F: Custom short block index, stores a 16-bit unsigned integer.
-pub struct FieldCustomShortBlockIndex(pub u16);
+/// _2F: Custom short block index, stores a 16-bit signed integer.
+pub struct FieldCustomShortBlockIndex(pub i16);
 
 impl FieldCustomShortBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
-        self.0 = reader.read_u16::<LE>()?;
+        self.0 = reader.read_i16::<LE>()?;
         Ok(())
     }
 }
 
 #[derive(Default, Debug)]
-/// _30: Long block index, stores a 32-bit unsigned integer.
-pub struct FieldLongBlockIndex(pub u32);
+/// _30: Long block index, stores a 32-bit signed integer.
+pub struct FieldLongBlockIndex(pub i32);
 
 impl FieldLongBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
-        self.0 = reader.read_u32::<LE>()?;
+        self.0 = reader.read_i32::<LE>()?;
         Ok(())
     }
 }
 
 #[derive(Default, Debug)]
-/// _31: Custom long block index, stores a 32-bit unsigned integer.
-pub struct FieldCustomLongBlockIndex(pub u32);
+/// _31: Custom long block index, stores a 32-bit signed integer.
+pub struct FieldCustomLongBlockIndex(pub i32);
 
 impl FieldCustomLongBlockIndex {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
-        self.0 = reader.read_u32::<LE>()?;
+        self.0 = reader.read_i32::<LE>()?;
         Ok(())
     }
 }
