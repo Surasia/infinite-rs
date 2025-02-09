@@ -80,6 +80,13 @@ fn tag_structure_derive2(
                         self.#field_name.load_blocks(source_index, adjusted_base + #offset, reader, structs, blocks)?;
                     });
                 }
+                if segment.ident == "FieldTagResource" {
+                    let field_name = &field.ident;
+                    let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
+                    return Some(quote! {
+                        self.#field_name.load_resource(adjusted_base + #offset, reader, structs, blocks)?;
+                    });
+                }
             }
         }
         None

@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     common::errors::{Error, TagError},
-    tag::datablock::TagSectionType,
+    tag::{datablock::TagSectionType, structure::TagStructType},
     Result,
 };
 use crate::{
@@ -815,18 +815,42 @@ impl FieldData {
 }
 
 #[derive(Default, Debug)]
-/// _43: Reference to tag resource, only useful at runtime.
-pub struct FieldTagResource {
+/// _43: Reference to tag resource.
+pub struct FieldTagResource<T: TagStructure> {
     pub block: u64, // uintptr at runtime
     handle: u32,
     pub resource_index: u32,
+    pub data: T,
 }
 
-impl FieldTagResource {
+impl<T: TagStructure + Debug> FieldTagResource<T> {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
         self.block = reader.read_u64::<LE>()?;
         self.handle = reader.read_u32::<LE>()?;
         self.resource_index = reader.read_u32::<LE>()?;
+        Ok(())
+    }
+
+    pub fn load_resource<R: BufReaderExt>(
+        &mut self,
+        adjusted_base: u64,
+        reader: &mut R,
+        structs: &[TagStruct],
+        blocks: &[TagDataBlock],
+    ) -> Result<()> {
+        let resource = structs
+            .iter()
+            .find(|s| s.struct_type == TagStructType::Custom);
+        if let Some(resource) = resource {
+            self.data.read(reader)?;
+            self.data.load_field_blocks(
+                resource.target_index,
+                adjusted_base,
+                reader,
+                structs,
+                blocks,
+            )?;
+        }
         Ok(())
     }
 }

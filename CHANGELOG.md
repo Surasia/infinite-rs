@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.10.0 - 2025-02-09
+- `FieldTagResource` now accepts a generic type that will be read.
+
 ## 0.9.0 - 2025-02-07
 - Added `TagStructLocation` to `TagStruct`
 - `FieldCharBlockIndex`, `FieldCustomCharBlockIndex`, `FieldShortBlockIndex`, `FieldCustomShortBlockIndex`, `FieldLongBlockIndex`, `FieldCustomLongBlockIndex` are now signed types.
