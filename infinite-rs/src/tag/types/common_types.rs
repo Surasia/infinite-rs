@@ -693,6 +693,37 @@ impl FieldQwordInteger {
 }
 
 #[derive(Default, Debug)]
+/// _39: Array of structures stored in sequence.
+pub struct FieldArray<T: TagStructure + Default> {
+    pub elements: Vec<T>,
+}
+
+impl<T: TagStructure + Default> FieldArray<T> {
+    pub fn read<R: BufReaderExt>(&mut self, reader: &mut R, size: u64) -> Result<()> {
+        for _ in 0..size {
+            let mut element = T::default();
+            element.read(reader)?;
+            self.elements.push(element);
+        }
+        Ok(())
+    }
+
+    pub fn load_blocks<R: BufReaderExt>(
+        &mut self,
+        reader: &mut R,
+        source_index: i32,
+        adjusted_base: u64,
+        structs: &[TagStruct],
+        blocks: &[TagDataBlock],
+    ) -> Result<()> {
+        for element in &mut self.elements {
+            element.load_field_blocks(source_index, adjusted_base, reader, structs, blocks)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Default, Debug)]
 /// _40: Tag block, stores the size of an array.
 pub struct FieldBlock<T: TagStructure> {
     field_offset: u64,

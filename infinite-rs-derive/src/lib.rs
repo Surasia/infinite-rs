@@ -19,6 +19,7 @@ struct TagStructureAttributes {
 #[deluxe(attributes(data))]
 struct TagStructureFieldAttributes {
     offset: u64,
+    count: Option<u64>,
 }
 
 fn extract_struct_field_attributes(
@@ -64,6 +65,22 @@ fn tag_structure_derive2(
             .get(&field_name.as_ref().unwrap().to_string())
             .unwrap()
             .offset;
+
+        if let syn::Type::Path(type_path) = &field.ty {
+            if let Some(segment) = type_path.path.segments.last() {
+                if segment.ident == "FieldArray" {
+                    let count = field_attributes
+                        .get(&field_name.as_ref().unwrap().to_string())
+                        .unwrap()
+                        .count
+                        .unwrap();
+                    return quote! {
+                        reader.seek(std::io::SeekFrom::Start(main_offset + #offset))?;
+                        self.#field_name.read(reader, #count)?;
+                    };
+                }
+            }
+        }
         quote! {
             reader.seek(std::io::SeekFrom::Start(main_offset + #offset))?;
             self.#field_name.read(reader)?;
@@ -85,6 +102,13 @@ fn tag_structure_derive2(
                     let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
                     return Some(quote! {
                         self.#field_name.load_resource(adjusted_base + #offset, reader, structs, blocks)?;
+                    });
+                }
+                if segment.ident == "FieldArray" {
+                    let field_name = &field.ident;
+                    let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
+                    return Some(quote! {
+                        self.#field_name.load_blocks(reader, source_index, adjusted_base + #offset, structs, blocks)?;
                     });
                 }
             }

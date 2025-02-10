@@ -1,5 +1,9 @@
 # infinite-rs Changelog
 
+## 0.10.1 - 2025-02-10
+- Added `FieldArray` which stores a sequence of a TagStructure in sequence.
+- Added `count` field attribute for TagStructure. 
+
 ## 0.10.0 - 2025-02-09
 - `FieldTagResource` now accepts a generic type that will be read.
 
