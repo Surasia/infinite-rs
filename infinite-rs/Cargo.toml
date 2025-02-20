@@ -27,11 +27,11 @@ bitflags = "2.8.0"
 byteorder = "1.5.0"
 num_enum = "0.7.3"
 thiserror = "2.0.11"
-infinite-rs-derive = { version = "0.1.6", path = "../infinite-rs-derive", optional = true }
+infinite-rs-derive = { version = "0.1.7", path = "../infinite-rs-derive", optional = true }
 
 [dev-dependencies]
 walkdir = "2.5.0"
-infinite-rs-derive = { version = "0.1.6", path = "../infinite-rs-derive" }
+infinite-rs-derive = { version = "0.1.7", path = "../infinite-rs-derive" }
 argh = "0.1.13"
 
 [build-dependencies.cmake]
