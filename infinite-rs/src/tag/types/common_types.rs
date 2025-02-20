@@ -9,7 +9,7 @@ use std::{
 
 use crate::{
     common::errors::{Error, TagError},
-    tag::{datablock::TagSectionType, structure::TagStructType},
+    tag::{data_reference::TagDataReference, datablock::TagSectionType, structure::TagStructType},
     Result,
 };
 use crate::{
@@ -715,9 +715,17 @@ impl<T: TagStructure + Default> FieldArray<T> {
         adjusted_base: u64,
         structs: &[TagStruct],
         blocks: &[TagDataBlock],
+        references: &[TagDataReference],
     ) -> Result<()> {
         for element in &mut self.elements {
-            element.load_field_blocks(source_index, adjusted_base, reader, structs, blocks)?;
+            element.load_field_blocks(
+                source_index,
+                adjusted_base,
+                reader,
+                structs,
+                blocks,
+                references,
+            )?;
         }
         Ok(())
     }
@@ -750,6 +758,7 @@ impl<T: TagStructure + Debug + Default> FieldBlock<T> {
         reader: &mut R,
         structs: &[TagStruct],
         blocks: &[TagDataBlock],
+        references: &[TagDataReference],
     ) -> Result<()> {
         // Empty blocks may cause issues.
         if self.size == 0 {
@@ -798,6 +807,7 @@ impl<T: TagStructure + Debug + Default> FieldBlock<T> {
                     reader,
                     structs,
                     blocks,
+                    references,
                 )?;
             }
         }
@@ -829,18 +839,38 @@ impl FieldReference {
 #[derive(Default, Debug)]
 /// _42: "External" resource inside tag.
 pub struct FieldData {
-    data: u64,      // uintptr at runtime
-    type_info: u64, // uintptr at runtime
-    unknown: u32,   // always 0?
+    data_pointer: u64, // uintptr at runtime
+    type_info: u64,    // uintptr at runtime
+    data_reference_index: u32,
     pub size: u32,
+    pub data: Vec<u8>,
 }
 
 impl FieldData {
     pub fn read<R: BufRead>(&mut self, reader: &mut R) -> Result<()> {
-        self.data = reader.read_u64::<LE>()?;
+        self.data_pointer = reader.read_u64::<LE>()?;
         self.type_info = reader.read_u64::<LE>()?;
-        self.unknown = reader.read_u32::<LE>()?;
+        self.data_reference_index = reader.read_u32::<LE>()?;
         self.size = reader.read_u32::<LE>()?;
+        Ok(())
+    }
+
+    pub fn load_data<R: BufReaderExt>(
+        &mut self,
+        reader: &mut R,
+        blocks: &[TagDataBlock],
+        data_references: &[TagDataReference],
+    ) -> Result<()> {
+        let reference = &data_references[self.data_reference_index as usize];
+        if reference.target_index != -1 {
+            let datablock = &blocks[usize::try_from(reference.target_index)?];
+            let position = reader.stream_position()?;
+            reader.seek(SeekFrom::Start(datablock.offset))?;
+            let mut buf = vec![0; self.size as usize];
+            reader.read_exact(&mut buf)?;
+            self.data = buf;
+            reader.seek(SeekFrom::Start(position))?;
+        }
         Ok(())
     }
 }
@@ -848,7 +878,7 @@ impl FieldData {
 #[derive(Default, Debug)]
 /// _43: Reference to tag resource.
 pub struct FieldTagResource<T: TagStructure> {
-    pub block: u64, // uintptr at runtime
+    block: u64, // uintptr at runtime
     handle: u32,
     pub resource_index: u32,
     pub data: T,
@@ -868,6 +898,7 @@ impl<T: TagStructure + Debug> FieldTagResource<T> {
         reader: &mut R,
         structs: &[TagStruct],
         blocks: &[TagDataBlock],
+        references: &[TagDataReference],
     ) -> Result<()> {
         let resource = structs
             .iter()
@@ -880,6 +911,7 @@ impl<T: TagStructure + Debug> FieldTagResource<T> {
                 reader,
                 structs,
                 blocks,
+                references,
             )?;
         }
         Ok(())

@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 
 use quote::quote;
-use syn::DeriveInput;
+use syn::{DataStruct, DeriveInput};
 
 #[derive(deluxe::ExtractAttributes)]
 #[deluxe(attributes(data))]
@@ -36,85 +36,110 @@ fn extract_struct_field_attributes(
     Ok(field_attributes)
 }
 
+fn extract_field_maps(
+    field_attributes: &HashMap<String, TagStructureFieldAttributes>,
+) -> (Vec<String>, Vec<u64>) {
+    field_attributes
+        .clone()
+        .into_iter()
+        .map(|(field, attrs)| (field, attrs.offset))
+        .unzip()
+}
+
+fn generate_field_reads(
+    data: &DataStruct,
+    field_attributes: &HashMap<String, TagStructureFieldAttributes>,
+) -> Vec<proc_macro2::TokenStream> {
+    data.fields
+        .iter()
+        .map(|field| {
+            let field_name = &field.ident;
+            let offset = field_attributes
+                .get(&field_name.as_ref().unwrap().to_string())
+                .unwrap()
+                .offset;
+            if let syn::Type::Path(type_path) = &field.ty {
+                if let Some(segment) = type_path.path.segments.last() {
+                    if segment.ident == "FieldArray" {
+                        let count = field_attributes
+                            .get(&field_name.as_ref().unwrap().to_string())
+                            .unwrap()
+                            .count
+                            .unwrap();
+                        return quote! {
+                            reader.seek(std::io::SeekFrom::Start(main_offset + #offset))?;
+                            self.#field_name.read(reader, #count)?;
+                        };
+                    }
+                }
+            }
+            quote! {
+                reader.seek(std::io::SeekFrom::Start(main_offset + #offset))?;
+                self.#field_name.read(reader)?;
+            }
+        })
+        .collect()
+}
+
+fn generate_field_blocks(
+    data: &DataStruct,
+    field_attributes: &HashMap<String, TagStructureFieldAttributes>,
+) -> Vec<proc_macro2::TokenStream> {
+    data.fields.iter().filter_map(|field| {
+        if let syn::Type::Path(type_path) = &field.ty {
+            if let Some(segment) = type_path.path.segments.last() {
+                let field_name = &field.ident;
+                match segment.ident.to_string().as_str() {
+                    "FieldBlock" => {
+                        let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
+                        Some(quote! {
+                            self.#field_name.load_blocks(source_index, adjusted_base + #offset, reader, structs, blocks, references)?;
+                        })
+                    },
+                    "FieldTagResource" => {
+                        let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
+                        Some(quote! {
+                            self.#field_name.load_resource(adjusted_base + #offset, reader, structs, blocks, references)?;
+                        })
+                    },
+                    "FieldArray" => {
+                        let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
+                        Some(quote! {
+                            self.#field_name.load_blocks(reader, source_index, adjusted_base + #offset, structs, blocks, references)?;
+                        })
+                    },
+                    "FieldData" => {
+                        Some(quote! {
+                            self.#field_name.load_data(reader, blocks, references)?;
+                        })
+                    },
+                    _ => None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }).collect()
+}
 fn tag_structure_derive2(
     input: proc_macro2::TokenStream,
 ) -> deluxe::Result<proc_macro2::TokenStream> {
     let mut ast: DeriveInput = syn::parse2(input)?;
-
     let TagStructureAttributes { size } = deluxe::extract_attributes(&mut ast)?;
-
     let field_attributes: HashMap<String, TagStructureFieldAttributes> =
         extract_struct_field_attributes(&mut ast)?;
-
     let ident: &syn::Ident = &ast.ident;
     let (impl_generics, type_generics, where_clause) = ast.generics.split_for_impl();
 
     let syn::Data::Struct(data) = &ast.data else {
         panic!("TagStructure can only be derived for structs")
     };
+    let (name, field_offset) = extract_field_maps(&field_attributes);
 
-    let (name, field_offset): (Vec<String>, Vec<u64>) = field_attributes
-        .clone()
-        .into_iter()
-        .map(|(field, attrs)| (field, attrs.offset))
-        .unzip();
-
-    let field_reads = data.fields.iter().map(|field| {
-        let field_name = &field.ident;
-        let offset = field_attributes
-            .get(&field_name.as_ref().unwrap().to_string())
-            .unwrap()
-            .offset;
-
-        if let syn::Type::Path(type_path) = &field.ty {
-            if let Some(segment) = type_path.path.segments.last() {
-                if segment.ident == "FieldArray" {
-                    let count = field_attributes
-                        .get(&field_name.as_ref().unwrap().to_string())
-                        .unwrap()
-                        .count
-                        .unwrap();
-                    return quote! {
-                        reader.seek(std::io::SeekFrom::Start(main_offset + #offset))?;
-                        self.#field_name.read(reader, #count)?;
-                    };
-                }
-            }
-        }
-        quote! {
-            reader.seek(std::io::SeekFrom::Start(main_offset + #offset))?;
-            self.#field_name.read(reader)?;
-        }
-    });
-
-    let field_blocks = data.fields.iter().filter_map(|field| {
-        if let syn::Type::Path(type_path) = &field.ty {
-            if let Some(segment) = type_path.path.segments.last() {
-                if segment.ident == "FieldBlock" {
-                    let field_name = &field.ident;
-                    let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
-                    return Some(quote! {
-                        self.#field_name.load_blocks(source_index, adjusted_base + #offset, reader, structs, blocks)?;
-                    });
-                }
-                if segment.ident == "FieldTagResource" {
-                    let field_name = &field.ident;
-                    let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
-                    return Some(quote! {
-                        self.#field_name.load_resource(adjusted_base + #offset, reader, structs, blocks)?;
-                    });
-                }
-                if segment.ident == "FieldArray" {
-                    let field_name = &field.ident;
-                    let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
-                    return Some(quote! {
-                        self.#field_name.load_blocks(reader, source_index, adjusted_base + #offset, structs, blocks)?;
-                    });
-                }
-            }
-        }
-        None
-    });
+    let field_reads = generate_field_reads(data, &field_attributes);
+    let field_blocks = generate_field_blocks(data, &field_attributes);
 
     Ok(quote! {
         impl #impl_generics infinite_rs::module::file::TagStructure for #ident #type_generics #where_clause {
@@ -143,6 +168,7 @@ fn tag_structure_derive2(
                 reader: &mut R,
                 structs: &[infinite_rs::tag::structure::TagStruct],
                 blocks: &[infinite_rs::tag::datablock::TagDataBlock],
+                references: &[infinite_rs::tag::data_reference::TagDataReference]
             ) -> infinite_rs::Result<()> {
                 #(#field_blocks)*
                 Ok(())

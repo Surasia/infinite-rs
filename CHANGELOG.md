@@ -1,5 +1,9 @@
 # infinite-rs Changelog
 
+## 0.11.0 - 2025-02-20
+- `FieldData` now reads the data contained inside, and can be accessed using the `data` member.
+- `block` in `FieldTagResource` is now private.
+
 ## 0.10.1 - 2025-02-10
 - Added `FieldArray` which stores a sequence of a TagStructure in sequence.
 - Added `count` field attribute for TagStructure. 

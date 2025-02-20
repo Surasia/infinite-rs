@@ -12,6 +12,7 @@ use std::{
 use super::header::ModuleVersion;
 use super::{block::ModuleBlockEntry, kraken::decompress};
 use crate::common::errors::{ModuleError, TagError};
+use crate::tag::data_reference::TagDataReference;
 use crate::tag::datablock::TagDataBlock;
 use crate::tag::structure::{TagStruct, TagStructType};
 use crate::{common::extensions::BufReaderExt, tag::loader::TagFile};
@@ -69,6 +70,7 @@ pub trait TagStructure {
         reader: &mut R,
         structs: &[TagStruct],
         blocks: &[TagDataBlock],
+        references: &[TagDataReference],
     ) -> Result<()>;
 }
 
@@ -403,6 +405,7 @@ impl ModuleFileEntry {
             &mut full_tag_reader,
             &tag_info.struct_definitions[..],
             &tag_info.datablock_definitions[..],
+            &tag_info.data_references[..],
         )?;
         Ok(T::default())
     }

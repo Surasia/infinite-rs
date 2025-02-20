@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufWriter, Read, Seek, SeekFrom, Write},
+    io::{BufWriter, Write},
 };
 
 use infinite_rs::{tag::types::common_types::FieldData, ModuleFile, Result};
@@ -29,15 +29,8 @@ fn main() -> Result<()> {
                 let mut source = HsSourceFileTag::default();
                 tag.read_metadata(&mut source)?;
 
-                let size = tag.uncompressed_header_size + 0x2D8;
-                let mut server_buf = vec![0; source.server.size as usize];
-                let mut client_buf = vec![0; source.client.size as usize];
-
-                if let Some(stream) = tag.data_stream.as_mut() {
-                    stream.seek(SeekFrom::Start(size as u64))?;
-                    stream.read_exact(&mut server_buf)?;
-                    stream.read_exact(&mut client_buf)?;
-                }
+                let server_buf = source.server.data;
+                let client_buf = source.client.data;
 
                 let server_file = File::create(format!("{SAVE_PATH}/{}_server.luac", tag.tag_id))?;
                 let mut bw = BufWriter::new(server_file);
