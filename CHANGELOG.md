@@ -1,5 +1,10 @@
 # infinite-rs Changelog
 
+## 0.12.0 - 2025-02-24
+- Fix reading of `FieldBlock` on resource files.
+- Update to Rust 2024
+- Simplified handling of field reads.
+
 ## 0.11.0 - 2025-02-20
 - `FieldData` now reads the data contained inside, and can be accessed using the `data` member.
 - `block` in `FieldTagResource` is now private.

@@ -1,12 +1,12 @@
 //! Tag datablock specifying the section for tag structs.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use num_enum::TryFromPrimitive;
 use std::io::BufRead;
 
 use crate::common::errors::{Error, TagError};
 use crate::common::extensions::Enumerable;
-use crate::Result;
+use crate::{Result, TagFile};
 
 #[derive(Default, Debug, TryFromPrimitive, PartialEq, Eq)]
 #[repr(u16)]
@@ -44,5 +44,18 @@ impl Enumerable for TagDataBlock {
             .map_err(|e| Error::TagError(TagError::InvalidTagSection(e)))?;
         self.offset = reader.read_u64::<LE>()?;
         Ok(())
+    }
+}
+
+impl TagDataBlock {
+    pub(crate) fn get_offset(&self, tag_info: &TagFile) -> u64 {
+        let section_offset = match self.section_type {
+            TagSectionType::TagData | TagSectionType::Header => 0,
+            TagSectionType::ResourceData => tag_info.header.data_size,
+            TagSectionType::ActualResource => {
+                tag_info.header.data_size + tag_info.header.resource_size
+            }
+        };
+        u64::from(section_offset) + self.offset
     }
 }

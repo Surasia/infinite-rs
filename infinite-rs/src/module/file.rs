@@ -1,7 +1,7 @@
 //! Module file entry containing metadata relating to tags and functions to read them.
 
 use bitflags::bitflags;
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::{
@@ -12,11 +12,10 @@ use std::{
 use super::header::ModuleVersion;
 use super::{block::ModuleBlockEntry, kraken::decompress};
 use crate::common::errors::{ModuleError, TagError};
-use crate::tag::data_reference::TagDataReference;
 use crate::tag::datablock::TagDataBlock;
-use crate::tag::structure::{TagStruct, TagStructType};
-use crate::{common::extensions::BufReaderExt, tag::loader::TagFile};
+use crate::tag::structure::TagStructType;
 use crate::{Error, Result};
+use crate::{common::extensions::BufReaderExt, tag::loader::TagFile};
 
 /// Trait for defining tag structures.
 ///
@@ -68,9 +67,7 @@ pub trait TagStructure {
         source_index: i32,
         adjusted_base: u64,
         reader: &mut R,
-        structs: &[TagStruct],
-        blocks: &[TagDataBlock],
-        references: &[TagDataReference],
+        tag_file: &TagFile,
     ) -> Result<()>;
 }
 
@@ -403,9 +400,7 @@ impl ModuleFileEntry {
             main_struct.target_index,
             0,
             &mut full_tag_reader,
-            &tag_info.struct_definitions[..],
-            &tag_info.datablock_definitions[..],
-            &tag_info.data_references[..],
+            tag_info,
         )?;
         Ok(T::default())
     }
@@ -483,18 +478,20 @@ unsafe fn read_compressed_block(
     block: &ModuleBlockEntry,
     data: &mut [u8],
 ) -> Result<()> {
-    let mut compressed_data = vec![0u8; block.compressed_size as usize];
-    reader.read_exact(&mut compressed_data)?;
-    let mut decompressed_data = vec![0u8; block.decompressed_size as usize];
-    decompress(
-        &compressed_data,
-        &mut decompressed_data,
-        block.decompressed_size as usize,
-    )?;
-    data[block.decompressed_offset as usize
-        ..(block.decompressed_offset + block.decompressed_size) as usize]
-        .copy_from_slice(&decompressed_data);
-    Ok(())
+    unsafe {
+        let mut compressed_data = vec![0u8; block.compressed_size as usize];
+        reader.read_exact(&mut compressed_data)?;
+        let mut decompressed_data = vec![0u8; block.decompressed_size as usize];
+        decompress(
+            &compressed_data,
+            &mut decompressed_data,
+            block.decompressed_size as usize,
+        )?;
+        data[block.decompressed_offset as usize
+            ..(block.decompressed_offset + block.decompressed_size) as usize]
+            .copy_from_slice(&decompressed_data);
+        Ok(())
+    }
 }
 
 /// Reads a single block of data from the file.

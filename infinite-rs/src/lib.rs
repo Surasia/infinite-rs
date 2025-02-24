@@ -11,6 +11,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(rustdoc::private_intra_doc_links)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 /*!
 Simple and fast deserialization library for Halo Infinite.
 
@@ -60,7 +61,7 @@ To define a structure that can be read from a tag data stream, you must first de
 
 *Padding between fields is automatically calculated. Any data between two offsets are skipped.*
 
-```rust
+```rust,no_run
 use infinite_rs::TagStructure;
 use infinite_rs::tag::types::common_types::{
     AnyTag, FieldReference,
@@ -78,7 +79,7 @@ struct MaterialTag {
 
 ### Reading structures
 
-```rust
+```rust,no_run
 use infinite_rs::tag::types::common_types::{
     AnyTag, FieldReference,
 };
@@ -126,7 +127,7 @@ fn load_tags() -> Result<()> {
 For enums, this requires [`TryFromPrimitive`](`num_enum::TryFromPrimitive`) to be implemented.
 For flags, you can use the [`bitflags`] crate.
 
-```rust
+```rust,no_run
 use infinite_rs::tag::types::common_types::{FieldShortEnum, FieldWordFlags};
 use infinite_rs::TagStructure;
 use num_enum::TryFromPrimitive;
@@ -184,5 +185,4 @@ pub use crate::{module::loader::ModuleFile, tag::loader::TagFile};
 extern crate infinite_rs_derive;
 
 #[cfg(feature = "derive")]
-#[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 pub use infinite_rs_derive::TagStructure;

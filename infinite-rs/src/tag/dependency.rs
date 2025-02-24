@@ -1,9 +1,9 @@
 //! Tag dependency structure containing info on lazy-loaded tags.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 
-use crate::common::extensions::{BufReaderExt, Enumerable};
 use crate::Result;
+use crate::common::extensions::{BufReaderExt, Enumerable};
 
 #[derive(Default, Debug)]
 /// Dependency structure that can be used to search and lazy load for tags inside modules.

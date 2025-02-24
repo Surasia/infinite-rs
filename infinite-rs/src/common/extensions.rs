@@ -95,7 +95,7 @@ pub trait BufReaderExt: BufRead + Seek {
     /// ```
     fn read_null_terminated_string(&mut self) -> Result<String> {
         let mut buffer = Vec::with_capacity(150); // Pre-allocate around 150 bytes (typical
-                                                  // filename size)
+        // filename size)
         self.read_until(0x00, &mut buffer)?;
         buffer.pop(); // remove null terminator
 

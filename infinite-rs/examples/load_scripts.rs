@@ -3,7 +3,7 @@ use std::{
     io::{BufWriter, Write},
 };
 
-use infinite_rs::{tag::types::common_types::FieldData, ModuleFile, Result};
+use infinite_rs::{ModuleFile, Result, tag::types::common_types::FieldData};
 use infinite_rs_derive::TagStructure;
 
 const DEPLOY_PATH: &str =

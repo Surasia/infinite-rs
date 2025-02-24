@@ -1,6 +1,6 @@
 //! Types used by the game to construct a tag.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use num_enum::TryFromPrimitive;
 use std::{
     fmt::Debug,
@@ -8,15 +8,11 @@ use std::{
 };
 
 use crate::{
+    Result, TagFile,
     common::errors::{Error, TagError},
-    tag::{data_reference::TagDataReference, datablock::TagSectionType, structure::TagStructType},
-    Result,
+    tag::{datablock::TagSectionType, structure::TagStructType},
 };
-use crate::{
-    common::extensions::BufReaderExt,
-    module::file::TagStructure,
-    tag::{datablock::TagDataBlock, structure::TagStruct},
-};
+use crate::{common::extensions::BufReaderExt, module::file::TagStructure};
 
 #[derive(Default, Debug)]
 /// _0: 32 Byte strings that usually store some sort of short name.
@@ -713,19 +709,10 @@ impl<T: TagStructure + Default> FieldArray<T> {
         reader: &mut R,
         source_index: i32,
         adjusted_base: u64,
-        structs: &[TagStruct],
-        blocks: &[TagDataBlock],
-        references: &[TagDataReference],
+        tag_file: &TagFile,
     ) -> Result<()> {
         for element in &mut self.elements {
-            element.load_field_blocks(
-                source_index,
-                adjusted_base,
-                reader,
-                structs,
-                blocks,
-                references,
-            )?;
+            element.load_field_blocks(source_index, adjusted_base, reader, tag_file)?;
         }
         Ok(())
     }
@@ -756,14 +743,14 @@ impl<T: TagStructure + Debug + Default> FieldBlock<T> {
         current_block: i32,
         collection_offset: u64,
         reader: &mut R,
-        structs: &[TagStruct],
-        blocks: &[TagDataBlock],
-        references: &[TagDataReference],
+        tag_file: &TagFile,
     ) -> Result<()> {
         // Empty blocks may cause issues.
         if self.size == 0 {
             return Ok(());
         }
+        let structs = &tag_file.struct_definitions;
+        let blocks = &tag_file.datablock_definitions;
 
         // This is the "root" of the tag block, pointing to where the metadata for it is stored.
         // If target index is -1, it's a resource block, which we don't want right now.
@@ -805,9 +792,7 @@ impl<T: TagStructure + Debug + Default> FieldBlock<T> {
                     block_struct.target_index,
                     adjusted_base,
                     reader,
-                    structs,
-                    blocks,
-                    references,
+                    tag_file,
                 )?;
             }
         }
@@ -855,17 +840,13 @@ impl FieldData {
         Ok(())
     }
 
-    pub fn load_data<R: BufReaderExt>(
-        &mut self,
-        reader: &mut R,
-        blocks: &[TagDataBlock],
-        data_references: &[TagDataReference],
-    ) -> Result<()> {
-        let reference = &data_references[self.data_reference_index as usize];
+    pub fn load_data<R: BufReaderExt>(&mut self, reader: &mut R, tag_file: &TagFile) -> Result<()> {
+        let reference = &tag_file.data_references[self.data_reference_index as usize];
         if reference.target_index != -1 {
-            let datablock = &blocks[usize::try_from(reference.target_index)?];
+            let datablock =
+                &tag_file.datablock_definitions[usize::try_from(reference.target_index)?];
             let position = reader.stream_position()?;
-            reader.seek(SeekFrom::Start(datablock.offset))?;
+            reader.seek(SeekFrom::Start(datablock.get_offset(tag_file)))?;
             let mut buf = vec![0; self.size as usize];
             reader.read_exact(&mut buf)?;
             self.data = buf;
@@ -896,23 +877,16 @@ impl<T: TagStructure + Debug> FieldTagResource<T> {
         &mut self,
         adjusted_base: u64,
         reader: &mut R,
-        structs: &[TagStruct],
-        blocks: &[TagDataBlock],
-        references: &[TagDataReference],
+        tag_file: &TagFile,
     ) -> Result<()> {
-        let resource = structs
+        let resource = tag_file
+            .struct_definitions
             .iter()
             .find(|s| s.struct_type == TagStructType::Custom);
         if let Some(resource) = resource {
             self.data.read(reader)?;
-            self.data.load_field_blocks(
-                resource.target_index,
-                adjusted_base,
-                reader,
-                structs,
-                blocks,
-                references,
-            )?;
+            self.data
+                .load_field_blocks(resource.target_index, adjusted_base, reader, tag_file)?;
         }
         Ok(())
     }

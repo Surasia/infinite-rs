@@ -1,10 +1,10 @@
 //! Reference to binary blob inside tag that isn't defined by a structure.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use std::io::BufRead;
 
-use crate::common::extensions::Enumerable;
 use crate::Result;
+use crate::common::extensions::Enumerable;
 
 #[derive(Default, Debug)]
 /// Structure that defines a reference to a blob of data inside tag data.

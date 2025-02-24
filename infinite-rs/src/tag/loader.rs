@@ -6,9 +6,9 @@ use super::{
     data_reference::TagDataReference, datablock::TagDataBlock, dependency::TagDependency,
     header::TagHeader, reference::TagReference, structure::TagStruct,
 };
+use crate::Result;
 use crate::common::extensions::BufReaderExt;
 use crate::module::header::ModuleVersion;
-use crate::Result;
 
 #[derive(Default, Debug)]
 /// Tag structure containing structure of entire tag file.

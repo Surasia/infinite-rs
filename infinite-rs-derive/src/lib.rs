@@ -93,24 +93,24 @@ fn generate_field_blocks(
                     "FieldBlock" => {
                         let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
                         Some(quote! {
-                            self.#field_name.load_blocks(source_index, adjusted_base + #offset, reader, structs, blocks, references)?;
+                            self.#field_name.load_blocks(source_index, adjusted_base + #offset, reader, tag_file)?;
                         })
                     },
                     "FieldTagResource" => {
                         let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
                         Some(quote! {
-                            self.#field_name.load_resource(adjusted_base + #offset, reader, structs, blocks, references)?;
+                            self.#field_name.load_resource(adjusted_base + #offset, reader, tag_file)?;
                         })
                     },
                     "FieldArray" => {
                         let offset = field_attributes.get(&field_name.as_ref().unwrap().to_string()).unwrap().offset;
                         Some(quote! {
-                            self.#field_name.load_blocks(reader, source_index, adjusted_base + #offset, structs, blocks, references)?;
+                            self.#field_name.load_blocks(reader, source_index, adjusted_base + #offset, tag_file)?;
                         })
                     },
                     "FieldData" => {
                         Some(quote! {
-                            self.#field_name.load_data(reader, blocks, references)?;
+                            self.#field_name.load_data(reader, tag_file)?;
                         })
                     },
                     _ => None
@@ -166,9 +166,7 @@ fn tag_structure_derive2(
                 source_index: i32,
                 adjusted_base: u64,
                 reader: &mut R,
-                structs: &[infinite_rs::tag::structure::TagStruct],
-                blocks: &[infinite_rs::tag::datablock::TagDataBlock],
-                references: &[infinite_rs::tag::data_reference::TagDataReference]
+                tag_file: &infinite_rs::tag::loader::TagFile,
             ) -> infinite_rs::Result<()> {
                 #(#field_blocks)*
                 Ok(())

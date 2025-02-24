@@ -1,11 +1,11 @@
 //! Module Header containing info on the layout of the module file.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use num_enum::TryFromPrimitive;
 use std::{fs::File, io::BufReader};
 
-use crate::common::errors::{Error, ModuleError};
 use crate::Result;
+use crate::common::errors::{Error, ModuleError};
 
 const HEADER_MAGIC: u32 = 0x6468_6F6D; // "mohd"
 

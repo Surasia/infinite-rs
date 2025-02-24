@@ -1,12 +1,12 @@
 //! Hierarchical structure entry of tag.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use num_enum::TryFromPrimitive;
 use std::io::BufRead;
 
+use crate::Result;
 use crate::common::errors::{Error, TagError};
 use crate::common::extensions::Enumerable;
-use crate::Result;
 
 #[derive(Default, Debug, TryFromPrimitive, PartialEq, Eq)]
 #[repr(u16)]

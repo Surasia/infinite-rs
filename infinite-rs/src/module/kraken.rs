@@ -2,11 +2,11 @@
 //!
 //! Originally from: <https://github.com/rfuzzo/red4lib>
 
-use crate::common::errors::{DecompressionError, Error};
 use crate::Result;
+use crate::common::errors::{DecompressionError, Error};
 
 #[link(name = "kraken_static")]
-extern "C" {
+unsafe extern "C" {
     // EXPORT int Kraken_Decompress(const byte *src, size_t src_len, byte *dst, size_t dst_len)
     fn Kraken_Decompress(
         buffer: *const u8,
@@ -42,30 +42,32 @@ pub unsafe fn decompress(
     output_buffer: &mut Vec<u8>,
     size: usize,
 ) -> Result<i32> {
-    let mut buffer = vec![0; size + 8]; // HACK: Ensures that pointer for memory buffer is aligned.
-    let result = Kraken_Decompress(
-        compressed_buffer.as_ptr(),
-        compressed_buffer.len(),
-        buffer.as_mut_ptr(),
-        size,
-    );
+    unsafe {
+        let mut buffer = vec![0; size + 8]; // HACK: Ensures that pointer for memory buffer is aligned.
+        let result = Kraken_Decompress(
+            compressed_buffer.as_ptr(),
+            compressed_buffer.len(),
+            buffer.as_mut_ptr(),
+            size,
+        );
 
-    if result < 0 {
-        return Err(Error::DecompressionError(
-            DecompressionError::DecompressionFailed(result),
-        ));
+        if result < 0 {
+            return Err(Error::DecompressionError(
+                DecompressionError::DecompressionFailed(result),
+            ));
+        }
+
+        let result_usize = usize::try_from(result)
+            .map_err(|_| Error::DecompressionError(DecompressionError::BufferSizeOverflow))?;
+
+        if result_usize > buffer.len() {
+            return Err(Error::DecompressionError(
+                DecompressionError::BufferSizeOverflow,
+            ));
+        }
+
+        buffer.resize(result_usize, 0);
+        *output_buffer = buffer;
+        Ok(result)
     }
-
-    let result_usize = usize::try_from(result)
-        .map_err(|_| Error::DecompressionError(DecompressionError::BufferSizeOverflow))?;
-
-    if result_usize > buffer.len() {
-        return Err(Error::DecompressionError(
-            DecompressionError::BufferSizeOverflow,
-        ));
-    }
-
-    buffer.resize(result_usize, 0);
-    *output_buffer = buffer;
-    Ok(result)
 }

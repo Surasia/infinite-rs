@@ -1,6 +1,6 @@
 [workspace]
 members = ["infinite-rs", "infinite-rs-derive"]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 authors = ["Surasia"]
@@ -10,8 +10,8 @@ categories = ["encoding", "games", "parsing"]
 keywords = ["halo", "halo-infinite", "game-hacking", "reverse-engineering"]
 readme = "README.md"
 license = "Unlicense OR MIT"
-edition = "2021"
-rust-version = "1.80"
+edition = "2024"
+rust-version = "1.85"
 
 [profile.release]
 lto = "fat"

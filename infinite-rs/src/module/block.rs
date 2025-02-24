@@ -1,10 +1,10 @@
 //! Module block containing info relating to Kraken compression.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use std::io::BufRead;
 
-use crate::common::extensions::Enumerable;
 use crate::Result;
+use crate::common::extensions::Enumerable;
 
 #[derive(Default, Debug)]
 /// Represents a module block entry containing information related to Kraken compression.

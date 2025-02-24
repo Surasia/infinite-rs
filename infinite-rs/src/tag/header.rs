@@ -1,10 +1,10 @@
 //! Tag Header containing info on the layout of the tag file.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use std::io::BufRead;
 
-use crate::common::errors::{Error, TagError};
 use crate::Result;
+use crate::common::errors::{Error, TagError};
 
 const HEADER_MAGIC: u32 = 0x6873_6375; // "ucsh"
 const HEADER_VERSION: i32 = 27;
