@@ -147,7 +147,7 @@ dependencies = [
 
 [[package]]
 name = "infinite-rs"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "argh",
  "bitflags",
@@ -161,7 +161,7 @@ dependencies = [
 
 [[package]]
 name = "infinite-rs-derive"
-version = "0.1.7"
+version = "0.1.8"
 dependencies = [
  "deluxe",
  "infinite-rs",
