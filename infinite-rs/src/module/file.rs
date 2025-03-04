@@ -268,11 +268,16 @@ impl ModuleFileEntry {
         data_offset: u64,
         blocks: &[ModuleBlockEntry],
         module_version: &ModuleVersion,
+        uses_hd1: bool,
     ) -> Result<()> {
         if self.is_loaded {
             return Ok(());
         }
-        let file_offset = data_offset + self.data_offset;
+        let file_offset = if uses_hd1 {
+            self.data_offset - data_offset
+        } else {
+            data_offset + self.data_offset
+        };
         let mut data = vec![0u8; self.total_uncompressed_size as usize];
 
         // Set position to start as we are already adding the file offset to it.
@@ -283,7 +288,6 @@ impl ModuleFileEntry {
         } else {
             read_single_block(reader, self, file_offset, &mut data)?;
         }
-
         let data_stream = BufReader::new(Cursor::new(data));
         self.data_stream = Some(data_stream);
         if !self.flags.contains(FileEntryFlags::RAW_FILE) {

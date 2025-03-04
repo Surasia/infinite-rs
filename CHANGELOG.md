@@ -1,5 +1,8 @@
 # infinite-rs Changelog
 
+## 0.12.1 - 2025-03-04
+- Fixed issue that caused HD1 files not to be read.
+
 ## 0.12.0 - 2025-02-24
 - Fix reading of `FieldBlock` on resource files.
 - Update to Rust 2024

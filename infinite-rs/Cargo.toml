@@ -1,7 +1,7 @@
 [package]
 name = "infinite-rs"
 description = "Simple and fast deserialization library for Halo Infinite."
-version = "0.12.0"
+version = "0.12.1"
 authors.workspace = true
 documentation.workspace = true
 repository.workspace = true
@@ -23,10 +23,10 @@ all_features = true
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [dependencies]
-bitflags = "2.8.0"
+bitflags = "2.9.0"
 byteorder = "1.5.0"
 num_enum = "0.7.3"
-thiserror = "2.0.11"
+thiserror = "2.0.12"
 infinite-rs-derive = { version = "0.1.8", path = "../infinite-rs-derive", optional = true }
 
 [dev-dependencies]

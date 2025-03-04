@@ -1,6 +1,6 @@
 //! Main abstraction file for modules.
 
-use byteorder::{ReadBytesExt, LE};
+use byteorder::{LE, ReadBytesExt};
 use std::{
     fs::File,
     io::{BufReader, Seek, SeekFrom},
@@ -15,8 +15,8 @@ use super::{
 };
 use crate::Result;
 use crate::{
-    common::{errors::TagError, extensions::BufReaderExt},
     Error,
+    common::{errors::TagError, extensions::BufReaderExt},
 };
 
 #[derive(Default, Debug)]
@@ -119,7 +119,7 @@ impl ModuleFile {
     /// Opens the HD1 file if it exists.
     fn open_hd1<T: AsRef<Path>>(&mut self, file_path: T) -> Result<()> {
         if self.header.hd1_delta != 0 {
-            let hd1 = file_path.as_ref().join("_hd1");
+            let hd1 = file_path.as_ref().with_extension("module_hd1");
             if hd1.exists() {
                 self.use_hd1 = true;
                 let file = File::open(hd1)?;
@@ -189,15 +189,22 @@ impl ModuleFile {
         let file = &mut self.files[index as usize];
         if file.data_offset_flags.contains(DataOffsetType::DEBUG) {
             return Ok(None); // Currently not reading debug modules because we don't have an
-                             // example.
+            // example.
         }
+
+        let mut offset = self.header.hd1_delta;
         if file.data_offset_flags.contains(DataOffsetType::USE_HD1) {
             if let Some(ref mut module_file) = self.hd1_file {
-                let mut offset = self.file_data_offset - self.header.hd1_delta;
-                if self.header.version <= ModuleVersion::Season3 {
-                    offset = self.header.hd1_delta;
+                if self.header.version <= ModuleVersion::CampaignFlight {
+                    offset += self.header.hd1_delta;
                 }
-                file.read_tag(module_file, offset, &self.blocks, &self.header.version)?;
+                file.read_tag(
+                    module_file,
+                    offset,
+                    &self.blocks,
+                    &self.header.version,
+                    true,
+                )?;
             } else {
                 return Ok(None);
             }
@@ -207,6 +214,7 @@ impl ModuleFile {
                 self.file_data_offset,
                 &self.blocks,
                 &self.header.version,
+                false,
             )?;
         }
         Ok(Some(file))
